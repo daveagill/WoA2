@@ -1,30 +1,62 @@
 package week.of.awesome;
 
-import com.badlogic.gdx.ApplicationAdapter;
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.ApplicationListener;
+import com.badlogic.gdx.utils.TimeUtils;
 
-public class Game extends ApplicationAdapter {
-	SpriteBatch batch;
-	Texture img;
+public class Game implements ApplicationListener {
+	
+	private static final long NANOS_PER_SEC = 1000000000L;
+	private static final float FIXED_TIMESTEP = 1f / 60f;
+	private static final long FIXED_TIMESTEP_NANOS = (long)(FIXED_TIMESTEP * NANOS_PER_SEC);
+	
+	private Renderer renderer;
+	private World world;
+	
+	private long lastFrameTime;
+	private long accumulatedTime;
 	
 	@Override
 	public void create () {
-		batch = new SpriteBatch();
-		img = new Texture("badlogic.jpg");
+		renderer = new Renderer();
+		world = new World();
+		
+		lastFrameTime = TimeUtils.nanoTime();
 	}
 
 	@Override
 	public void render () {
-		Gdx.gl.glClearColor(1, 0, 0, 1);
-		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-		batch.begin();
-		batch.draw(img, 0, 0);
-		batch.end();
+		long time = TimeUtils.nanoTime();
+		accumulatedTime += (time - lastFrameTime);
+		lastFrameTime = time;
 		
-		Runnable r2 = () -> System.out.println("Hello world two!");
-		r2.run();
+		while (accumulatedTime >= FIXED_TIMESTEP_NANOS) {
+			world.update(FIXED_TIMESTEP);
+			accumulatedTime -= FIXED_TIMESTEP_NANOS;
+		}
+		
+		renderer.drawWorld(world);
+	}
+
+	@Override
+	public void resize(int width, int height) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void pause() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void resume() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void dispose() {
+		renderer.dispose();
 	}
 }
