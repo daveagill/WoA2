@@ -13,9 +13,13 @@ public class World {
 	private Level level;
 	private Collection<Body> physicalStageBodies;
 	
+	private Tile.Type droppableTileType;
+	private Vector2 droppableTilePos;
+	private Vector2 cursorPos;
+	
 	private Collection<Toy> toys = new ArrayList<Toy>();
 	
-	private static float SPAWN_FREQ = 1000f;
+	private static float SPAWN_FREQ = 1f;
 	private float countDownToSpawn = 0;
 	
 	public World() {
@@ -42,6 +46,27 @@ public class World {
 	public void removeToy(Toy toy) {
 		toys.remove(toy);
 		physics.killBody(toy.getBody());
+	}
+	
+	public void selectDroppableTile(Tile.Type tileType) {
+		this.droppableTileType = tileType;
+	}
+	
+	public Tile getDroppableTile() {
+		if (droppableTileType == null || droppableTilePos == null) { return null; }
+		return new Tile(droppableTileType);
+	}
+	
+	public void setDroppableTilePos(Vector2 position) {
+		this.droppableTilePos = position;
+	}
+	
+	public void setCursorPos(Vector2 cursorPos) {
+		this.cursorPos = cursorPos;
+	}
+	
+	public Vector2 getCursorPos() {
+		return cursorPos;
 	}
 	
 	public void update(float dt) {

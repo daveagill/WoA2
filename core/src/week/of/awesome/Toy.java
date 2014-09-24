@@ -18,8 +18,7 @@ public class Toy {
 	
 	private Type type;
 	private Body body;
-	private float horizontalSpeed = 0;
-	private boolean isJumping = false;
+	private float horizontalVelocity = 0;
 	
 	public Toy(Type type, Vector2 position, Physics physics) {
 		this.type = type;
@@ -43,45 +42,21 @@ public class Toy {
 	}
 	
 	public void landed() {
-		// only really landing if not landed on a jump
-		if (isJumping) { return; }
-		System.out.println("landed");
-		body.setLinearVelocity(body.getLinearVelocity().x, 0);
-		horizontalSpeed = STANDARD_HORIZONTAL_SPEED;
-	}
-	
-	public void falling() {
+		float sign = getFacing() == Facing.RIGHT ? 1 : -1;
+		horizontalVelocity = STANDARD_HORIZONTAL_SPEED * sign;
 	}
 	
 	public void jump(Vector2 velocity) {
-		body.setLinearVelocity(body.getLinearVelocity().x, velocity.y);
-		horizontalSpeed = velocity.x == 0 ? STANDARD_HORIZONTAL_SPEED : Math.abs(velocity.x);
-		isJumping = true;
-		System.out.println("jump");
+		horizontalVelocity = velocity.x == 0 ? body.getLinearVelocity().x : velocity.x;
+		body.setLinearVelocity(horizontalVelocity, velocity.y);
 	}
 	
 	public void update(float dt) {
 		
-		if (body.getLinearVelocity().y > 0) {
-			body.setLinearVelocity(body.getLinearVelocity().x, 0);
-		}
-		
+		// walk when grounded
 		boolean grounded = body.getLinearVelocity().y == 0.0f;
-		System.out.println(body.getLinearVelocity().y);
-		
 		if (grounded) {
-			float sign = getFacing() == Facing.RIGHT ? 1 : -1;
-			
-			while (Math.abs( body.getLinearVelocity().x ) < horizontalSpeed) {
-				body.applyLinearImpulse(new Vector2(0.1f * sign, 0f), body.getWorldCenter(), true);
-			}
-			
-			while (Math.abs( body.getLinearVelocity().x ) > horizontalSpeed) {
-				body.applyLinearImpulse(new Vector2(-0.1f * sign, 0f), body.getWorldCenter(), true);
-			}
+			body.setLinearVelocity(horizontalVelocity, 0);
 		}
-		
-		// reset jumping state
-		isJumping = false;
 	}
 }

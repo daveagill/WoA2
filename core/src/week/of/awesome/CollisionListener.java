@@ -39,8 +39,10 @@ public class CollisionListener implements ContactListener {
 
 	@Override
 	public void preSolve(Contact contact, Manifold oldManifold) {
-		// TODO Auto-generated method stub
-		
+		CollisionHandler c = findHandler(contact);
+		if (c != null) {
+			c.onPreSolve();
+		}
 	}
 
 	@Override

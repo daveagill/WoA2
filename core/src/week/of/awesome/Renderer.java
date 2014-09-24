@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Matrix4;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.utils.Disposable;
@@ -68,25 +69,42 @@ public class Renderer implements Disposable {
 		this.stageMidY = Gdx.graphics.getHeight() / 2;
 	}
 	
-	private void drawBackgroundAndSetupTranslation(Level level) {
-		batch.setTransformMatrix(new Matrix4());
-		
+	private Rectangle getLevelBounds(Level level) {
 		int levelWidth = level.getWidth() * WORLD_TO_SCREEN_RATIO;
 		int levelHeight = level.getHeight() * WORLD_TO_SCREEN_RATIO;
 		int stageX = stageMidX - levelWidth / 2;
-		int stageY = stageMidY - levelHeight / 2;		
+		int stageY = stageMidY - levelHeight / 2;
+		
+		return new Rectangle(stageX, stageY, levelWidth, levelHeight);
+	}
+	
+	public Vector2 convertToSnappedLevelGridOrNull(Vector2 position, Level level) {
+		Rectangle bounds = getLevelBounds(level);
+		
+		if (!bounds.contains(position)) { return null; }
+		
+		Vector2 relativePos = position.cpy().sub(bounds.getPosition(new Vector2()));
+		Vector2 posInTileSpace = relativePos.scl(Tile.TILE_SIZE * WORLD_TO_SCREEN_RATIO);
+		
+		return new Vector2((int)posInTileSpace.x, (int)posInTileSpace.y);
+	}
+	
+	private void drawBackgroundAndSetupTranslation(Level level) {
+		batch.setTransformMatrix(new Matrix4());
+		
+		Rectangle bounds = getLevelBounds(level);
 
 		batch.draw(outOfBoundsBackgroundTex, 0, 0, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		batch.draw(
 				mainBackgroundTex,
-				stageX - MAIN_BACKGROUND_MARGIN,
-				stageY - MAIN_BACKGROUND_MARGIN,
+				(int)bounds.x - MAIN_BACKGROUND_MARGIN,
+				(int)bounds.y - MAIN_BACKGROUND_MARGIN,
 				0, 0,
-				levelWidth + MAIN_BACKGROUND_MARGIN*2,
-				levelHeight + MAIN_BACKGROUND_MARGIN*2);
+				(int)bounds.width + MAIN_BACKGROUND_MARGIN*2,
+				(int)bounds.height + MAIN_BACKGROUND_MARGIN*2);
 		
 		// set the global translation for all things to be rendered, so that 0,0 is the bottom left of the actual level, rather than the screen
-		batch.setTransformMatrix(new Matrix4().translate(stageX + WORLD_TO_SCREEN_RATIO/2, stageY + WORLD_TO_SCREEN_RATIO/2, 0).scale(WORLD_TO_SCREEN_RATIO, WORLD_TO_SCREEN_RATIO, 1));
+		batch.setTransformMatrix(new Matrix4().translate(bounds.x + WORLD_TO_SCREEN_RATIO/2, bounds.y + WORLD_TO_SCREEN_RATIO/2, 0).scale(WORLD_TO_SCREEN_RATIO, WORLD_TO_SCREEN_RATIO, 1));
 	}
 	
 	private void drawStage(Level level) {
@@ -108,6 +126,15 @@ public class Renderer implements Disposable {
 		}
 	}
 	
+	private void drawCursor(Vector2 pos, Tile.Type cursorTileType) {
+		boolean cursorIsATile = cursorTileType != null;
+		
+		if (cursorIsATile) {
+			// need to snap tile to grid
+			
+		}
+	}
+	
 	public void drawWorld(World world) {
 		gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
@@ -115,6 +142,7 @@ public class Renderer implements Disposable {
 		
 		drawBackgroundAndSetupTranslation(world.getLevel());
 		drawStage(world.getLevel());
+		drawCursor(world.getCursorPos(), world.getDroppableTile());
 		drawToys(world.getToys());
 		
 		batch.end();

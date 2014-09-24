@@ -18,8 +18,13 @@ public class Tile {
 	private Type type;
 	private Vector2 position;
 	
-	public Tile(Type type) {
+	public Tile(Type type, Vector2 position) {
 		this.type = type;
+		this.position = position;
+	}
+	
+	public Tile(Type type) {
+		this(type, new Vector2());
 	}
 	
 	public Type getType() { return type; }

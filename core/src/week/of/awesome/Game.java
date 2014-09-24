@@ -20,7 +20,7 @@ public class Game implements ApplicationListener {
 	public void create () {
 		renderer = new Renderer();
 		world = new World();
-		controller = new GameplayController(world);
+		controller = new GameplayController(world, renderer);
 		
 		lastFrameTime = TimeUtils.nanoTime();
 	}

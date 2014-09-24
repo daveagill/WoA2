@@ -40,7 +40,7 @@ public class Physics implements Disposable {
 		fixtureDef.shape = circle;
 		fixtureDef.density = 1;
 		fixtureDef.filter.groupIndex = -1; // negative, so never collide
-		fixtureDef.friction = 0f;
+		fixtureDef.friction = 0.2f;
 		fixtureDef.restitution = 1;
 		
 		body.createFixture(fixtureDef);
@@ -60,7 +60,7 @@ public class Physics implements Disposable {
 		
 		FixtureDef fixtureDef = new FixtureDef();
 		fixtureDef.shape = box;
-		fixtureDef.friction = 0f;
+		fixtureDef.friction = 0.5f;
 		fixtureDef.restitution = 1;
 		
 		body.createFixture(fixtureDef);

@@ -7,12 +7,21 @@ import com.badlogic.gdx.physics.box2d.WorldManifold;
 public class GameplayController {
 	
 	private World world;
+	private Renderer renderer;
 	
-	public GameplayController(World world) {
+	public GameplayController(World world, Renderer renderer) {
 		this.world = world;
+		this.renderer = renderer;
 		
 		// install a collision listener that will direct collision events to this controller
 		world.setCollisionListener(new CollisionListener(this));
+	}
+	
+	public void mouseMove(Vector2 screenPos) {
+		world.setCursorPos(screenPos);
+		
+		Vector2 droppableTilePos = renderer.convertToSnappedLevelGridOrNull(screenPos, world.getLevel());
+		world.setDroppableTilePos(droppableTilePos);
 	}
 
 	public CollisionHandler createCollisionHandlerForAToB(Contact contact, Object a, Object b) {
@@ -21,13 +30,13 @@ public class GameplayController {
 			Toy toy = (Toy)b;
 			
 			if (tile.getType() == Tile.Type.BLOCK) {
-				
 				boolean vertical = contact.getWorldManifold().getNormal().y > 0.5f;
-				if (vertical) {
-					return new CollisionHandler() {
-						public void onBegin() { toy.landed(); }
-						//public void onEnd() { toy.falling(); }
-					};
+				boolean falling = toy.getBody().getLinearVelocity().y < 0;
+				if (vertical && falling) {
+					return CollisionHandler.onPreSolve(() -> {
+						contact.setRestitution(0); // prevent any bouncing
+						toy.landed();
+					});
 				}
 			}
 			
@@ -37,7 +46,7 @@ public class GameplayController {
 			
 			if (tile.getType() == Tile.Type.JUMP_SINGLE) {
 				
-				return CollisionHandler.onBegin(() -> { toy.jump(new Vector2(0, 8f)); });
+				return CollisionHandler.onBegin(() -> { toy.jump(new Vector2(0, 5f)); });
 			}
 			
 			if (tile.getType() == Tile.Type.JUMP_DOUBLE) {

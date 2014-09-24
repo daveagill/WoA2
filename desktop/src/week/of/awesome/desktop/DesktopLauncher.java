@@ -5,7 +5,6 @@ import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 
 import week.of.awesome.Game;
 import week.of.awesome.Renderer;
-import week.of.awesome.Tile;
 
 public class DesktopLauncher {
 	public static void main (String[] arg) {
