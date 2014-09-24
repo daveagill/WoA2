@@ -3,7 +3,7 @@ package week.of.awesome;
 import com.badlogic.gdx.math.Vector2;
 
 public class Tile {
-	public static int TILE_SIZE = 50;
+	public static int TILE_SIZE = 1;
 	
 	public static enum Type {
 		BLOCK,
@@ -24,11 +24,21 @@ public class Tile {
 	
 	public Type getType() { return type; }
 	
-	public void setWorldPosition(Vector2 position) {
+	public void setPosition(Vector2 position) {
 		this.position = position;
 	}
 	
-	public Vector2 getWorldPosition() {
+	public Vector2 getPosition() {
 		return position.cpy();
+	}
+	
+	public int getWidth() {
+		if (type == Type.START) { return TILE_SIZE * 2; }
+		return TILE_SIZE;
+	}
+	
+	public int getHeight() {
+		if (type == Type.START) { return TILE_SIZE * 2; }
+		return TILE_SIZE;
 	}
 }

@@ -11,6 +11,7 @@ public class Game implements ApplicationListener {
 	
 	private Renderer renderer;
 	private World world;
+	private GameplayController controller;
 	
 	private long lastFrameTime;
 	private long accumulatedTime;
@@ -19,6 +20,7 @@ public class Game implements ApplicationListener {
 	public void create () {
 		renderer = new Renderer();
 		world = new World();
+		controller = new GameplayController(world);
 		
 		lastFrameTime = TimeUtils.nanoTime();
 	}

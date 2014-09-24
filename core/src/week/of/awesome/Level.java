@@ -37,7 +37,7 @@ public class Level {
 		
 		if (tile == null) { return; }
 		
-		tile.setWorldPosition(new Vector2(x * Tile.TILE_SIZE, y * Tile.TILE_SIZE));
+		tile.setPosition(new Vector2(x, y));
 		
 		if (tile.getType().equals(Tile.Type.START)) {
 			starterTiles.add(tile);
