@@ -20,8 +20,13 @@ public class GameplayController {
 	public void mouseMove(Vector2 screenPos) {
 		world.setCursorPos(screenPos);
 		
-		Vector2 droppableTilePos = renderer.convertToSnappedLevelGridOrNull(screenPos, world.getLevel());
-		world.setDroppableTilePos(droppableTilePos);
+		Vector2 levelSpacePos = renderer.convertToLevelSpaceOrNull(screenPos, world.getLevel());
+		world.setDroppableTilePos(levelSpacePos);
+	}
+	
+	public void mouseClicked(Vector2 screenPos) {
+		world.selectDroppableTile( renderer.getTileSelectionOrNull(screenPos) );
+		world.confirmDroppableTile();
 	}
 
 	public CollisionHandler createCollisionHandlerForAToB(Contact contact, Object a, Object b) {

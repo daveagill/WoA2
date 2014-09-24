@@ -19,6 +19,7 @@ public class Toy {
 	private Type type;
 	private Body body;
 	private float horizontalVelocity = 0;
+	private boolean landedAtLeastOnce = false;
 	
 	public Toy(Type type, Vector2 position, Physics physics) {
 		this.type = type;
@@ -42,21 +43,22 @@ public class Toy {
 	}
 	
 	public void landed() {
-		float sign = getFacing() == Facing.RIGHT ? 1 : -1;
-		horizontalVelocity = STANDARD_HORIZONTAL_SPEED * sign;
+		landedAtLeastOnce = true;
 	}
 	
-	public void jump(Vector2 velocity) {
-		horizontalVelocity = velocity.x == 0 ? body.getLinearVelocity().x : velocity.x;
-		body.setLinearVelocity(horizontalVelocity, velocity.y);
+	public void jump(Vector2 jumpVelocity) {
+		horizontalVelocity = jumpVelocity.x == 0 ? horizontalVelocity : jumpVelocity.x;
+		body.setLinearVelocity(horizontalVelocity, jumpVelocity.y);
 	}
 	
 	public void update(float dt) {
-		
 		// walk when grounded
 		boolean grounded = body.getLinearVelocity().y == 0.0f;
-		if (grounded) {
-			body.setLinearVelocity(horizontalVelocity, 0);
+		if (landedAtLeastOnce && grounded) {
+			float sign = getFacing() == Facing.RIGHT ? 1 : -1;
+			body.setLinearVelocity(STANDARD_HORIZONTAL_SPEED * sign, 0);
 		}
+		
+		horizontalVelocity = body.getLinearVelocity().x;
 	}
 }

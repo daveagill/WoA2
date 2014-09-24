@@ -46,4 +46,12 @@ public class Tile {
 		if (type == Type.START) { return TILE_SIZE * 2; }
 		return TILE_SIZE;
 	}
+	
+	public boolean isPositionViableForLevel(Level level) {
+		int x = (int)position.x;
+		int y = (int)position.y;
+		
+		Tile tileBelow = level.getTile(x, y-1);
+		return level.getTile(x, y) == null && tileBelow != null && tileBelow.getType() == Type.BLOCK;
+	}
 }

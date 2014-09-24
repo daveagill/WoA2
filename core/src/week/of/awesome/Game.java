@@ -12,6 +12,7 @@ public class Game implements ApplicationListener {
 	private Renderer renderer;
 	private World world;
 	private GameplayController controller;
+	private InputMapper input;
 	
 	private long lastFrameTime;
 	private long accumulatedTime;
@@ -21,6 +22,7 @@ public class Game implements ApplicationListener {
 		renderer = new Renderer();
 		world = new World();
 		controller = new GameplayController(world, renderer);
+		input = new InputMapper(controller);
 		
 		lastFrameTime = TimeUtils.nanoTime();
 	}
@@ -32,6 +34,7 @@ public class Game implements ApplicationListener {
 		lastFrameTime = time;
 		
 		while (accumulatedTime >= FIXED_TIMESTEP_NANOS) {
+			input.poll();
 			world.update(FIXED_TIMESTEP);
 			accumulatedTime -= FIXED_TIMESTEP_NANOS;
 		}

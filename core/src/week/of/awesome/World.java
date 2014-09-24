@@ -13,13 +13,13 @@ public class World {
 	private Level level;
 	private Collection<Body> physicalStageBodies;
 	
-	private Tile.Type droppableTileType;
+	private Tile.Type droppableTileType = Tile.Type.BLOCK;
 	private Vector2 droppableTilePos;
 	private Vector2 cursorPos;
 	
 	private Collection<Toy> toys = new ArrayList<Toy>();
 	
-	private static float SPAWN_FREQ = 1f;
+	private static float SPAWN_FREQ = 0.5f;
 	private float countDownToSpawn = 0;
 	
 	public World() {
@@ -48,17 +48,30 @@ public class World {
 		physics.killBody(toy.getBody());
 	}
 	
+	public void confirmDroppableTile() {
+		Tile tile = getDroppableTile();
+		if (tile == null) { return; } // nothing to do
+		
+		// drop the tile if viable
+		if (tile.isPositionViableForLevel(level)) {
+			Vector2 tilePos = tile.getPosition();
+			level.setTile(tile, (int)tilePos.x, (int)tilePos.y);
+			addTilePhysically(tile);
+		}
+	}
+	
 	public void selectDroppableTile(Tile.Type tileType) {
 		this.droppableTileType = tileType;
 	}
 	
 	public Tile getDroppableTile() {
 		if (droppableTileType == null || droppableTilePos == null) { return null; }
-		return new Tile(droppableTileType);
+		return new Tile(droppableTileType, droppableTilePos);
 	}
 	
 	public void setDroppableTilePos(Vector2 position) {
-		this.droppableTilePos = position;
+		if (droppableTileType == null) { return; } // no tile selected
+		droppableTilePos = position;
 	}
 	
 	public void setCursorPos(Vector2 cursorPos) {
@@ -96,24 +109,27 @@ public class World {
 			for (int x = 0; x < level.getWidth(); ++x) {
 				Tile t = level.getTile(x, y);
 				if (t == null) { continue; }
-				
-				Body tileBody = null;
-				
-				switch (t.getType()) {
-					case BLOCK: tileBody = physics.createBlockTileBody(t.getPosition()); break;
-					case START: break; // do nothing
-					case GOAL: tileBody = physics.createGoalTileBody(t.getPosition()); break;
-					case JUMP_SINGLE: // fallthrough
-					case JUMP_DOUBLE: tileBody = physics.createJumpUpTileBody(t.getPosition(), t); break;
-					case JUMP_LEFT: // fallthrough
-					case JUMP_RIGHT: tileBody = physics.createCornerJumpTileBody(t.getPosition(), t); break;
-				}
-				
-				if (tileBody != null) {
-					tileBody.setUserData(t);
-					physicalStageBodies.add(tileBody);
-				}
+				addTilePhysically(t);
 			}
+		}
+	}
+	
+	private void addTilePhysically(Tile t) {
+		Body tileBody = null;
+		
+		switch (t.getType()) {
+			case BLOCK: tileBody = physics.createBlockTileBody(t.getPosition()); break;
+			case START: break; // do nothing
+			case GOAL: tileBody = physics.createGoalTileBody(t.getPosition()); break;
+			case JUMP_SINGLE: // fallthrough
+			case JUMP_DOUBLE: tileBody = physics.createJumpUpTileBody(t.getPosition(), t); break;
+			case JUMP_LEFT: // fallthrough
+			case JUMP_RIGHT: tileBody = physics.createCornerJumpTileBody(t.getPosition(), t); break;
+		}
+		
+		if (tileBody != null) {
+			tileBody.setUserData(t);
+			physicalStageBodies.add(tileBody);
 		}
 	}
 }
