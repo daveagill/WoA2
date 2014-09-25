@@ -11,20 +11,20 @@ public class World {
 	private Physics physics = new Physics();
 	
 	private Level level;
-	private Collection<Body> physicalStageBodies;
+	private Collection<Body> physicalStageBodies = new ArrayList<Body>();
 	
-	private Tile.Type droppableTileType = Tile.Type.BLOCK;
-	private Vector2 droppableTilePos;
+	private Tile.Type droppableTileType = null;
 	private Vector2 cursorPos;
 	
 	private Collection<Toy> toys = new ArrayList<Toy>();
+	
+	private int numRescued = 0;
 	
 	private static float SPAWN_FREQ = 0.5f;
 	private float countDownToSpawn = 0;
 	
 	public World() {
-		level = LevelLoader.getLevel(1);
-		buildPhysicalStageFromLevel();
+		beginLevel(1);
 	}
 	
 	public com.badlogic.gdx.physics.box2d.World getB2d() {
@@ -43,14 +43,16 @@ public class World {
 		return Collections.unmodifiableCollection(toys);
 	}
 	
-	public void removeToy(Toy toy) {
+	public void rescueToy(Toy toy) {
 		toys.remove(toy);
 		physics.killBody(toy.getBody());
+		++numRescued;
 	}
 	
-	public void confirmDroppableTile() {
-		Tile tile = getDroppableTile();
-		if (tile == null) { return; } // nothing to do
+	public void confirmDroppableTile(Vector2 position) {
+		if (droppableTileType == null || position == null) { return; } // nothing to do
+		
+		Tile tile = new Tile(droppableTileType, position);
 		
 		// drop the tile if viable
 		if (tile.isPositionViableForLevel(level)) {
@@ -61,17 +63,12 @@ public class World {
 	}
 	
 	public void selectDroppableTile(Tile.Type tileType) {
+		if (tileType == null) { return; }
 		this.droppableTileType = tileType;
 	}
 	
-	public Tile getDroppableTile() {
-		if (droppableTileType == null || droppableTilePos == null) { return null; }
-		return new Tile(droppableTileType, droppableTilePos);
-	}
-	
-	public void setDroppableTilePos(Vector2 position) {
-		if (droppableTileType == null) { return; } // no tile selected
-		droppableTilePos = position;
+	public Tile.Type getSelectedDroppableTileType() {
+		return droppableTileType;
 	}
 	
 	public void setCursorPos(Vector2 cursorPos) {
@@ -83,6 +80,10 @@ public class World {
 	}
 	
 	public void update(float dt) {
+		if (toys.isEmpty() && numRescued >= level.getNumRescuedNeeded()) {
+			beginLevel(level.getNumber());
+		}
+		
 		physics.update(dt);
 		
 		// spawn new toys
@@ -100,6 +101,22 @@ public class World {
 		for (Toy toy : toys) {
 			toy.update(dt);
 		}
+	}
+	
+	private void beginLevel(int levelNum) {
+		// cleanup any previous physical stage
+		for (Body b : physicalStageBodies) {
+			physics.killBody(b);
+		}
+		
+		// cleanup other state
+		this.droppableTileType = null;
+		this.countDownToSpawn = 0;
+		this.numRescued = 0;
+		
+		// create the next level
+		level = LevelLoader.getLevel(levelNum);
+		buildPhysicalStageFromLevel();
 	}
 	
 	private void buildPhysicalStageFromLevel() {

@@ -18,8 +18,8 @@ import com.badlogic.gdx.utils.Disposable;
 
 public class Renderer implements Disposable {
 	
-	private static int MAIN_BACKGROUND_MARGIN = 40;
-	public static int WORLD_TO_SCREEN_RATIO = 50;
+	private static int MAIN_BACKGROUND_MARGIN = 0;
+	public static int WORLD_TO_SCREEN_RATIO = 40;
 	
 	private static int TILE_SCREEN_SIZE = Tile.TILE_SIZE * WORLD_TO_SCREEN_RATIO;
 	
@@ -101,6 +101,8 @@ public class Renderer implements Disposable {
 	}
 	
 	public Tile.Type getTileSelectionOrNull(Vector2 mousePos) {
+		if (mousePos == null) { return null; }
+		
 		for (Tile t : getToolPalette()) {
 			Rectangle bounds = new Rectangle(
 					t.getPosition().x - TILE_SCREEN_SIZE/2, t.getPosition().y - TILE_SCREEN_SIZE/2,
@@ -123,6 +125,18 @@ public class Renderer implements Disposable {
 		return new Rectangle(stageX, stageY, levelWidth, levelHeight);
 	}
 	
+	private void useUITransform() {
+		batch.setTransformMatrix(new Matrix4());
+	}
+	
+	private void useLevelTransform(Level level) {
+		Rectangle bounds = getLevelBounds(level);
+		
+		// set the global translation for all things to be rendered, so that 0,0 is the bottom left of the actual level, rather than the screen
+		batch.setTransformMatrix(new Matrix4().translate(bounds.x + WORLD_TO_SCREEN_RATIO/2, bounds.y + WORLD_TO_SCREEN_RATIO/2, 0).scale(WORLD_TO_SCREEN_RATIO, WORLD_TO_SCREEN_RATIO, 1));
+
+	}
+	
 	private List<Tile> getToolPalette() {
 		List<Tile> palette = new ArrayList<Tile>();
 		palette.add(new Tile(Tile.Type.BLOCK));
@@ -142,11 +156,10 @@ public class Renderer implements Disposable {
 		return palette;
 	}
 	
-	private void drawUIAndSetupTranslation(Level level, Vector2 mousePos, Tile activeTile) {
-		batch.setTransformMatrix(new Matrix4());
-		
+	private void drawStage(Level level) {
 		Rectangle bounds = getLevelBounds(level);
-
+		
+		useUITransform();
 		batch.draw(outOfBoundsBackgroundTex, 0, 0, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		batch.draw(
 				mainBackgroundTex,
@@ -156,13 +169,7 @@ public class Renderer implements Disposable {
 				(int)bounds.width + MAIN_BACKGROUND_MARGIN*2,
 				(int)bounds.height + MAIN_BACKGROUND_MARGIN*2);
 		
-		drawToolPalette(mousePos, activeTile);
-		
-		// set the global translation for all things to be rendered, so that 0,0 is the bottom left of the actual level, rather than the screen
-		batch.setTransformMatrix(new Matrix4().translate(bounds.x + WORLD_TO_SCREEN_RATIO/2, bounds.y + WORLD_TO_SCREEN_RATIO/2, 0).scale(WORLD_TO_SCREEN_RATIO, WORLD_TO_SCREEN_RATIO, 1));
-	}
-	
-	private void drawStage(Level level) {
+		useLevelTransform(level);
 		
 		for (int y = 0; y < level.getHeight(); ++y) {
 			for (int x = 0; x < level.getWidth(); ++x) {
@@ -182,23 +189,30 @@ public class Renderer implements Disposable {
 		}
 	}
 	
-	private void drawCursorAndDroppableTile(Vector2 cursorPos, Tile droppableTile, Level level) {
-		boolean isTileSelected = droppableTile != null;
+	private void drawCursorAndDroppableTile(Vector2 cursorPos, Tile.Type selectedTileType, Level level) {
+		boolean isTileSelected = selectedTileType != null;
 		if (isTileSelected) {
-			boolean isTileDroppable = droppableTile.isPositionViableForLevel(level);
+			
+			Vector2 levelSpaceCursorPos = convertToLevelSpaceOrNull(cursorPos, level);
+			boolean isWithinLevel = levelSpaceCursorPos != null;
+			
+			Tile tile = new Tile(selectedTileType, levelSpaceCursorPos);
+			boolean isTileDroppable = isWithinLevel && tile.isPositionViableForLevel(level);
+			
 			if (isTileDroppable) {
-				drawTile(droppableTile);
+				useLevelTransform(level);
+				drawTile(tile);
+				useUITransform();
 			}
 			else {
 				batch.setColor(1f, 1f, 1f, 0.7f);
-				Vector2 drawCenteredPos = droppableTile.getPosition().sub(droppableTile.getWidth()/2f, droppableTile.getHeight()/2f);
-				draw(lookupTextureForTile(droppableTile), drawCenteredPos, droppableTile.getWidth(), droppableTile.getHeight());
+				draw(lookupTextureForTile(tile), cursorPos, tile.getWidth() * TILE_SCREEN_SIZE, tile.getHeight() * TILE_SCREEN_SIZE);
 				batch.setColor(1f, 1f, 1f, 1f);
 			}
 		}
 	}
 	
-	private void drawToolPalette(Vector2 mousePos, Tile activeTile) {
+	private void drawToolPalette(Vector2 mousePos, Tile.Type selectedTileType) {
 		List<Tile> palette = getToolPalette();
 		
 		int backgroundPadding = 30;
@@ -215,7 +229,7 @@ public class Renderer implements Disposable {
 			int tileScreenWidth = t.getWidth() * WORLD_TO_SCREEN_RATIO;
 			int tileScreenHeight = t.getHeight() * WORLD_TO_SCREEN_RATIO;
 			
-			if (t.getType() == selectionType || activeTile != null && t.getType() == activeTile.getType()) {
+			if (t.getType() == selectionType || selectedTileType != null && t.getType() == selectedTileType) {
 				int highlightPadding = 10;
 				drawRepeating(paletteHighlightBackgroundTex, t.getPosition(), tileScreenWidth + highlightPadding, tileScreenHeight + highlightPadding);
 			}
@@ -228,13 +242,16 @@ public class Renderer implements Disposable {
 		
 		batch.begin();
 		
-		drawUIAndSetupTranslation(world.getLevel(), world.getCursorPos(), world.getDroppableTile());
 		drawStage(world.getLevel());
-		drawCursorAndDroppableTile(world.getCursorPos(), world.getDroppableTile(), world.getLevel());
 		drawToys(world.getToys());
+		
+		useUITransform();
+		drawToolPalette(world.getCursorPos(), world.getSelectedDroppableTileType());
+		drawCursorAndDroppableTile(world.getCursorPos(), world.getSelectedDroppableTileType(), world.getLevel());
 		
 		batch.end();
 		
+		useLevelTransform(world.getLevel());
 		Matrix4 combined = batch.getProjectionMatrix().cpy().mul(batch.getTransformMatrix());
 		b2dDebug.render(world.getB2d(), combined);
 	}

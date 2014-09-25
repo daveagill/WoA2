@@ -11,6 +11,8 @@ public class Level {
 	private Collection<Tile> starterTiles = new ArrayList<Tile>();
 	private Collection<Tile> goalTiles = new ArrayList<Tile>();
 	private String name;
+	private int number;
+	private int numRescuedNeeded = 5;
 	private int width;
 	private int height;
 	
@@ -29,6 +31,8 @@ public class Level {
 	
 	
 	public String getName() { return name; }
+	public int getNumber() { return number; }
+	public int getNumRescuedNeeded() { return numRescuedNeeded; }
 	public int getWidth() { return width; }
 	public int getHeight() { return height; }
 	

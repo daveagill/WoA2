@@ -19,14 +19,13 @@ public class GameplayController {
 	
 	public void mouseMove(Vector2 screenPos) {
 		world.setCursorPos(screenPos);
-		
-		Vector2 levelSpacePos = renderer.convertToLevelSpaceOrNull(screenPos, world.getLevel());
-		world.setDroppableTilePos(levelSpacePos);
 	}
 	
 	public void mouseClicked(Vector2 screenPos) {
 		world.selectDroppableTile( renderer.getTileSelectionOrNull(screenPos) );
-		world.confirmDroppableTile();
+		
+		Vector2 levelSpacePos = renderer.convertToLevelSpaceOrNull(screenPos, world.getLevel());
+		world.confirmDroppableTile(levelSpacePos);
 	}
 
 	public CollisionHandler createCollisionHandlerForAToB(Contact contact, Object a, Object b) {
@@ -46,7 +45,7 @@ public class GameplayController {
 			}
 			
 			if (tile.getType() == Tile.Type.GOAL) {
-				return CollisionHandler.onBegin(() -> { world.removeToy(toy); });
+				return CollisionHandler.onBegin(() -> { world.rescueToy(toy); });
 			}
 			
 			if (tile.getType() == Tile.Type.JUMP_SINGLE) {
