@@ -6,10 +6,13 @@ import java.util.Collections;
 import java.util.List;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Files.FileType;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.BitmapFont.HAlignment;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
@@ -18,13 +21,12 @@ import com.badlogic.gdx.utils.Disposable;
 
 public class Renderer implements Disposable {
 	
-	private static int MAIN_BACKGROUND_MARGIN = 0;
-	public static int WORLD_TO_SCREEN_RATIO = 40;
+	private static final int MAIN_BACKGROUND_MARGIN = 30;
+	public static final int WORLD_TO_SCREEN_RATIO = 40;
 	
-	private static int TILE_SCREEN_SIZE = Tile.TILE_SIZE * WORLD_TO_SCREEN_RATIO;
+	private static final int TILE_SCREEN_SIZE = Tile.TILE_SIZE * WORLD_TO_SCREEN_RATIO;
 	
-	private static int TILE_PALETTE_Y_BOTTOM = 30;
-	private static int TILE_PALETTE_HEIGHT = TILE_SCREEN_SIZE + TILE_PALETTE_Y_BOTTOM;
+	private static final int BOTTOM_UI_PANE_HEIGHT = 80; //TILE_SCREEN_SIZE + TILE_PALETTE_Y_BOTTOM;
 
 	private GL20 gl;
 	private SpriteBatch batch = new SpriteBatch();
@@ -34,20 +36,49 @@ public class Renderer implements Disposable {
 	
 	private int stageMidX;
 	private int stageMidY;
+	private int bottomUiWidth = Gdx.graphics.getWidth() - 100;
+	private int screenWidth;
+	private int screenHeight;
+	
+	// mouse cursor
+	private Vector2 mousePos = new Vector2();
+	private boolean mousePressed = false;
+	
+	private boolean mouseLostTile = false;
+	
+	// tool palette stuff
+	private List<Tile> toolPalette;
+	private int uiPaletteLeftX;
+	private int uiPaletteLeftY;
+	private int uiPaletteWidth;
+	private int uiPaletteHeight;
+	
+	// kill button stuff
+	private Rectangle uiKillButtonBounds;
+	
+	// fonts
+	BitmapFont font;
 	
 	// background
 	private Texture outOfBoundsBackgroundTex;
 	private Texture mainBackgroundTex;
+	private Texture bottomUiBackgroundTex;
 	private Texture toolPaletteBackgroundTex;
 	private Texture paletteHighlightBackgroundTex;
 	
+	// UI
+	private Texture killAllButtonTex;
+	private Texture killAllButtonPressedTex;
+	
 	// tiles
-	private Texture tileTex;
+	private Texture groundTex;
 	private Texture startTex;
 	private Texture goalTex;
-	private Texture jumpSingle;
-	private Texture jumpLeft;
-	private Texture jumpRight;
+	private Texture jumpSingleTex;
+	private Texture jumpDoubleTex;
+	private Texture jumpLeftTex;
+	private Texture jumpRightTex;
+	private Texture blockerTex;
 	
 	// toys
 	private Texture bearTex;
@@ -59,11 +90,16 @@ public class Renderer implements Disposable {
 		
 		b2dDebug = new Box2DDebugRenderer();
 		
+		font = new BitmapFont(Gdx.files.getFileHandle("fonts/BABYCAKE_small.fnt", FileType.Internal));
+		
 		this.outOfBoundsBackgroundTex = newTexture("outOfBounds.png");
 		this.outOfBoundsBackgroundTex.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		
 		this.mainBackgroundTex = newTexture("mainBackground.png");
 		this.mainBackgroundTex.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
+		
+		this.bottomUiBackgroundTex = newTexture("bottomUIBackground.png");
+		this.bottomUiBackgroundTex.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		
 		this.toolPaletteBackgroundTex = newTexture("paletteBackground.png");
 		this.toolPaletteBackgroundTex.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
@@ -71,19 +107,43 @@ public class Renderer implements Disposable {
 		this.paletteHighlightBackgroundTex = newTexture("paletteHighlightBackground.png");
 		this.paletteHighlightBackgroundTex.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		
-		this.tileTex = newTexture("PNG Grass/slice03_03.png");
-		this.startTex = newTexture("castle.png");
-		this.goalTex = newTexture("flagYellow.png");
-		this.jumpSingle = newTexture("tundraHalf.png");
-		this.jumpLeft = newTexture("slice07_07.png");
-		this.jumpRight = newTexture("slice06_06.png");
+		this.killAllButtonTex = newTexture("killAll.png");
+		this.killAllButtonPressedTex = newTexture("killAll_down.png");
+		
+		this.groundTex = newTexture("ground.png");
+		this.startTex = newTexture("start.png");
+		this.goalTex = newTexture("goal.png");
+		this.jumpSingleTex = newTexture("jumpSingle.png");
+		this.jumpDoubleTex = newTexture("jumpDouble.png");
+		this.jumpLeftTex = newTexture("jumpLeft.png");
+		this.jumpRightTex = newTexture("jumpRight.png");
+		this.blockerTex = newTexture("blocker.png");
 		
 		this.ballTex = newTexture("ball.png");
 		this.bearTex = newTexture("bear.png");
 		
 		this.stageMidX = Gdx.graphics.getWidth() / 2;
-		this.stageMidY = TILE_PALETTE_HEIGHT + (Gdx.graphics.getHeight() - TILE_PALETTE_HEIGHT) / 2;
+		this.stageMidY = BOTTOM_UI_PANE_HEIGHT + (Gdx.graphics.getHeight() - BOTTOM_UI_PANE_HEIGHT) / 2;
+		this.screenWidth = Gdx.graphics.getWidth();
+		this.screenHeight = Gdx.graphics.getHeight();
+		
+		calculateToolPaletteUI();
+		calculateResetButtonUI();
 	}
+	
+	public void notifyMouseMove(Vector2 mousePos) {
+		boolean mouseEnteredBottomUI = this.mousePos.y > BOTTOM_UI_PANE_HEIGHT && mousePos.y <= BOTTOM_UI_PANE_HEIGHT;
+		boolean mouseExitedBottomUI = this.mousePos.y <= BOTTOM_UI_PANE_HEIGHT && mousePos.y > BOTTOM_UI_PANE_HEIGHT;
+		if (mouseEnteredBottomUI) { mouseLostTile = true; } // mouse will lose tile when it enters the bottom UI area
+		if (mouseExitedBottomUI) { mouseLostTile = false; } // mouse will regain tile when it leaves
+		this.mousePos = mousePos;
+	}
+	public void notifyMouseDown() {
+		this.mousePressed = true;
+		boolean aTileWasSelected = getTileSelectionOrNull() != null;
+		if (aTileWasSelected) { mouseLostTile = false; } // mouse gains tile
+	}
+	public void notifyMouseUp() { this.mousePressed = false; }
 	
 	public Vector2 convertToLevelSpaceOrNull(Vector2 position, Level level) {
 		Rectangle bounds = getLevelBounds(level);
@@ -100,10 +160,10 @@ public class Renderer implements Disposable {
 		return posInTileSpace;
 	}
 	
-	public Tile.Type getTileSelectionOrNull(Vector2 mousePos) {
+	public Tile.Type getTileSelectionOrNull() {
 		if (mousePos == null) { return null; }
 		
-		for (Tile t : getToolPalette()) {
+		for (Tile t : toolPalette) {
 			Rectangle bounds = new Rectangle(
 					t.getPosition().x - TILE_SCREEN_SIZE/2, t.getPosition().y - TILE_SCREEN_SIZE/2,
 					t.getWidth() * WORLD_TO_SCREEN_RATIO, t.getHeight() * WORLD_TO_SCREEN_RATIO);
@@ -114,6 +174,10 @@ public class Renderer implements Disposable {
 		}
 		
 		return null;
+	}
+	
+	public boolean isMouseWithinKillAllButton() {
+		return uiKillButtonBounds.contains(mousePos);
 	}
 	
 	private Rectangle getLevelBounds(Level level) {
@@ -137,30 +201,46 @@ public class Renderer implements Disposable {
 
 	}
 	
-	private List<Tile> getToolPalette() {
-		List<Tile> palette = new ArrayList<Tile>();
-		palette.add(new Tile(Tile.Type.BLOCK));
-		palette.add(new Tile(Tile.Type.JUMP_SINGLE));
-		palette.add(new Tile(Tile.Type.JUMP_DOUBLE));
-		palette.add(new Tile(Tile.Type.JUMP_LEFT));
-		palette.add(new Tile(Tile.Type.JUMP_RIGHT));
+	private void calculateToolPaletteUI() {
+		this.toolPalette = new ArrayList<Tile>();
+		toolPalette.add(new Tile(Tile.Type.BLOCKER));
+		toolPalette.add(new Tile(Tile.Type.JUMP_SINGLE));
+		toolPalette.add(new Tile(Tile.Type.JUMP_DOUBLE));
+		toolPalette.add(new Tile(Tile.Type.JUMP_LEFT));
+		toolPalette.add(new Tile(Tile.Type.JUMP_RIGHT));
 		
 		int stepX = TILE_SCREEN_SIZE + 10;
-		int leftX = (int) stageMidX - palette.size()/2 * stepX;
-		int bottomY = TILE_SCREEN_SIZE/2 + TILE_PALETTE_Y_BOTTOM;
+		int leftX = stageMidX - bottomUiWidth/2 + TILE_SCREEN_SIZE/2;
+		int bottomY = BOTTOM_UI_PANE_HEIGHT/2;
 		
-		for (int i = 0; i < palette.size(); ++i) {
-			palette.get(i).setPosition(new Vector2(leftX + stepX*i, bottomY));
+		for (int i = 0; i < toolPalette.size(); ++i) {
+			toolPalette.get(i).setPosition(new Vector2(leftX + stepX*i, bottomY));
 		}
 		
-		return palette;
+		int marginPadding = 10;
+		uiPaletteLeftX = (int) toolPalette.get(0).getPosition().x - TILE_SCREEN_SIZE/2 - marginPadding;
+		uiPaletteLeftY = (int) toolPalette.get(0).getPosition().y - TILE_SCREEN_SIZE/2 - marginPadding;
+		uiPaletteWidth = (int) (toolPalette.get(toolPalette.size()-1).getPosition().x + TILE_SCREEN_SIZE/2 - uiPaletteLeftX + marginPadding);
+		uiPaletteHeight = TILE_SCREEN_SIZE + marginPadding*2;
+	}
+	
+	private void calculateResetButtonUI() {
+		int paletteRightX = uiPaletteLeftX + uiPaletteWidth;
+		int paddingBetweenPaletteAndKillButton = 20;
+
+		this.uiKillButtonBounds = new Rectangle(
+				paletteRightX + paddingBetweenPaletteAndKillButton,
+				BOTTOM_UI_PANE_HEIGHT/2 - killAllButtonTex.getHeight()/2,
+				killAllButtonTex.getWidth(),
+				killAllButtonTex.getHeight());
+		 
 	}
 	
 	private void drawStage(Level level) {
 		Rectangle bounds = getLevelBounds(level);
 		
 		useUITransform();
-		batch.draw(outOfBoundsBackgroundTex, 0, 0, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		batch.draw(outOfBoundsBackgroundTex, 0, BOTTOM_UI_PANE_HEIGHT, 0, 0, screenWidth, screenHeight);
 		batch.draw(
 				mainBackgroundTex,
 				(int)bounds.x - MAIN_BACKGROUND_MARGIN,
@@ -189,11 +269,11 @@ public class Renderer implements Disposable {
 		}
 	}
 	
-	private void drawCursorAndDroppableTile(Vector2 cursorPos, Tile.Type selectedTileType, Level level) {
+	private void drawCursorAndDroppableTile(Tile.Type selectedTileType, Level level) {
 		boolean isTileSelected = selectedTileType != null;
-		if (isTileSelected) {
+		if (!mouseLostTile && isTileSelected) {
 			
-			Vector2 levelSpaceCursorPos = convertToLevelSpaceOrNull(cursorPos, level);
+			Vector2 levelSpaceCursorPos = convertToLevelSpaceOrNull(mousePos, level);
 			boolean isWithinLevel = levelSpaceCursorPos != null;
 			
 			Tile tile = new Tile(selectedTileType, levelSpaceCursorPos);
@@ -206,35 +286,63 @@ public class Renderer implements Disposable {
 			}
 			else {
 				batch.setColor(1f, 1f, 1f, 0.7f);
-				draw(lookupTextureForTile(tile), cursorPos, tile.getWidth() * TILE_SCREEN_SIZE, tile.getHeight() * TILE_SCREEN_SIZE);
+				draw(lookupTextureForTile(tile), mousePos, tile.getWidth() * TILE_SCREEN_SIZE, tile.getHeight() * TILE_SCREEN_SIZE);
 				batch.setColor(1f, 1f, 1f, 1f);
 			}
 		}
 	}
 	
-	private void drawToolPalette(Vector2 mousePos, Tile.Type selectedTileType) {
-		List<Tile> palette = getToolPalette();
-		
-		int backgroundPadding = 30;
+	private void drawToolPalette(Tile.Type selectedTileType) {
+	
 		drawRepeating(
 				toolPaletteBackgroundTex,
-				new Vector2(stageMidX, TILE_PALETTE_Y_BOTTOM + TILE_SCREEN_SIZE/2),
-				(int) (palette.get(palette.size()-1).getPosition().x - palette.get(0).getPosition().x + TILE_SCREEN_SIZE + backgroundPadding),
-				TILE_SCREEN_SIZE + backgroundPadding);
+				uiPaletteLeftX,
+				uiPaletteLeftY,
+				uiPaletteWidth,
+				uiPaletteHeight);
 		
 		
-		Tile.Type selectionType = getTileSelectionOrNull(mousePos);
+		Tile.Type selectionType = getTileSelectionOrNull();
 		
-		for (Tile t : palette) {
+		for (Tile t : toolPalette) {
 			int tileScreenWidth = t.getWidth() * WORLD_TO_SCREEN_RATIO;
 			int tileScreenHeight = t.getHeight() * WORLD_TO_SCREEN_RATIO;
+			Vector2 tilePos = t.getPosition();
+			int highlightPadding = 5;
 			
 			if (t.getType() == selectionType || selectedTileType != null && t.getType() == selectedTileType) {
-				int highlightPadding = 10;
-				drawRepeating(paletteHighlightBackgroundTex, t.getPosition(), tileScreenWidth + highlightPadding, tileScreenHeight + highlightPadding);
+				int highlightLeftX = (int) (tilePos.x - tileScreenWidth/2 - highlightPadding);
+				int highlightLeftY = (int) (tilePos.y - tileScreenHeight/2 - highlightPadding);
+				int highlightWidth = tileScreenWidth + highlightPadding*2;
+				int highlightHeight = tileScreenHeight + highlightPadding*2;
+				drawRepeating(paletteHighlightBackgroundTex, highlightLeftX, highlightLeftY, highlightWidth, highlightHeight);
 			}
 			draw(lookupTextureForTile(t), t.getPosition(), tileScreenWidth, tileScreenHeight);
 		}
+	}
+	
+	private void drawBottomUI(World world) {
+		drawRepeating(
+				bottomUiBackgroundTex,
+				stageMidX - screenWidth/2,
+				0,
+				screenWidth,
+				BOTTOM_UI_PANE_HEIGHT);
+		
+		drawToolPalette(world.getSelectedDroppableTileType());
+		
+		// draw kill all button
+		Vector2 killButtonCenter = new Vector2(uiKillButtonBounds.x + killAllButtonTex.getWidth()/2, uiKillButtonBounds.y + killAllButtonTex.getHeight()/2);
+		Texture killButtonTex = this.isMouseWithinKillAllButton() && mousePressed ? this.killAllButtonPressedTex : this.killAllButtonTex;
+		draw(killButtonTex, killButtonCenter, killAllButtonTex.getWidth(), killAllButtonTex.getHeight());
+		
+		// draw the stats
+		String numRescued = world.getNumRescued() + " Rescued";
+		String numRequired = world.getLevel().getNumRescuedNeeded() + " Needed";
+		int statsRightX = stageMidX + bottomUiWidth/2;
+		int fontY = (int) (BOTTOM_UI_PANE_HEIGHT/2 + font.getLineHeight());
+		int fudgeY = 3;
+		font.drawMultiLine(batch, numRescued + "\n" + numRequired, statsRightX, fontY + fudgeY, 0, HAlignment.RIGHT);
 	}
 	
 	public void drawWorld(World world) {
@@ -246,25 +354,26 @@ public class Renderer implements Disposable {
 		drawToys(world.getToys());
 		
 		useUITransform();
-		drawToolPalette(world.getCursorPos(), world.getSelectedDroppableTileType());
-		drawCursorAndDroppableTile(world.getCursorPos(), world.getSelectedDroppableTileType(), world.getLevel());
-		
+		drawBottomUI(world);
+		drawCursorAndDroppableTile(world.getSelectedDroppableTileType(), world.getLevel());
+				
 		batch.end();
 		
-		useLevelTransform(world.getLevel());
+		/*useLevelTransform(world.getLevel());
 		Matrix4 combined = batch.getProjectionMatrix().cpy().mul(batch.getTransformMatrix());
-		b2dDebug.render(world.getB2d(), combined);
+		b2dDebug.render(world.getB2d(), combined);*/
 	}
 	
 	private Texture lookupTextureForTile(Tile tile) {
 		switch (tile.getType()) {
-			case BLOCK:       return tileTex;
+			case GROUND:      return groundTex;
 			case START:       return startTex;
 			case GOAL:        return goalTex;
-			case JUMP_SINGLE: return jumpSingle;
-			case JUMP_DOUBLE: return jumpSingle;
-			case JUMP_LEFT:   return jumpLeft;
-			case JUMP_RIGHT:  return jumpRight;
+			case JUMP_SINGLE: return jumpSingleTex;
+			case JUMP_DOUBLE: return jumpDoubleTex;
+			case JUMP_LEFT:   return jumpLeftTex;
+			case JUMP_RIGHT:  return jumpRightTex;
+			case BLOCKER:     return blockerTex;
 		}
 	
 		throw new RuntimeException("No such type!");
@@ -272,24 +381,16 @@ public class Renderer implements Disposable {
 	
 	private void drawTile(Tile tile) {
 		Texture texture = lookupTextureForTile(tile);
-		
-		float verticalOffset;
-		switch (tile.getType()) {
-			case JUMP_SINGLE: verticalOffset = -0.7f; break;
-			case JUMP_DOUBLE: verticalOffset = -0.7f; break;
-			default: verticalOffset = 0;
-		}
-		
 		Vector2 pos = tile.getPosition();
-		draw(texture, new Vector2((int)pos.x, (int)pos.y + verticalOffset), tile.getWidth(), tile.getHeight());
+		draw(texture, new Vector2((int)pos.x, (int)pos.y), tile.getWidth(), tile.getHeight());
 	}
 	
 	private void draw(Texture t, Vector2 pos, float width, float height) {
 		batch.draw(t, pos.x - width/2, pos.y - height/2, width, height);
 	}
 	
-	private void drawRepeating(Texture t, Vector2 pos, int width, int height) {
-		batch.draw(t, pos.x - width/2, pos.y - height/2, 0, 0, width, height);
+	private void drawRepeating(Texture t, int x, int y, int width, int height) {
+		batch.draw(t, x, y, 0, 0, width, height);
 	}
 	
 	private Texture newTexture(String path) {

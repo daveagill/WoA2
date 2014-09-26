@@ -8,7 +8,7 @@ import com.badlogic.gdx.math.Vector2;
 
 public class Level {
 	private List<Tile> tiles;
-	private Collection<Tile> starterTiles = new ArrayList<Tile>();
+	private List<Spawner> spawners = new ArrayList<Spawner>();
 	private Collection<Tile> goalTiles = new ArrayList<Tile>();
 	private String name;
 	private int number;
@@ -17,15 +17,29 @@ public class Level {
 	private int height;
 	
 	
-	public Level(String name, int width, int height) {
+	public Level(int number, String name, List<List<Tile>> tileGrid, int numRescuedNeeded) {
+		this.number = number;
 		this.name = name;
-		this.width = width;
-		this.height = height;
+		this.numRescuedNeeded = numRescuedNeeded;
+		
+		width = tileGrid.get(0).size();
+		height = tileGrid.size();
 		tiles = new ArrayList<Tile>(width*height);
 		
-		// initialise to an empty map
+		// need to init up to full size
 		for (int i = 0; i < width * height; ++i) {
 			tiles.add(null);
+		}
+		
+		// add tiles to the level
+		int y = height-1;
+		for (List<Tile> row : tileGrid) {
+			int x = 0;
+			for (Tile tile : row) {
+				setTile(tile, x, y);
+				++x;
+			}
+			--y;
 		}
 	}
 	
@@ -44,7 +58,7 @@ public class Level {
 		tile.setPosition(new Vector2(x, y));
 		
 		if (tile.getType().equals(Tile.Type.START)) {
-			starterTiles.add(tile);
+			spawners.add(new Spawner(tile));
 		}
 		else if (tile.getType().equals(Tile.Type.GOAL)) {
 			goalTiles.add(tile);
@@ -56,8 +70,8 @@ public class Level {
 		return tiles.get(index(x, y));
 	}
 	
-	public Collection<Tile> getStarterTiles() {
-		return starterTiles;
+	public List<Spawner> getSpawners() {
+		return spawners;
 	}
 	
 	public Collection<Tile> getGoalTiles() {

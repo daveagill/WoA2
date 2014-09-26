@@ -1,0 +1,18 @@
+<level name="Level 2">
+	<rescue>5</rescue>
+	<map>
+		. . S . . . . . #
+		. . # # # . . . #
+		. . . . . . . . #
+		. . . . . . . . #
+		. . . . . . . . #
+		. . . . . . . . #
+		. . . . . . . . #
+		#J1 . . . . . . #
+		. # F . J1. J1# #
+		# # # # # # # # #
+	</map>
+	<spawnerConfigs>
+		<spawn amount="500000000" freq="0.5" />
+	</spawnerConfigs>
+</level>

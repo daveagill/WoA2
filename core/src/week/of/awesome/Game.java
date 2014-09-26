@@ -10,9 +10,11 @@ public class Game implements ApplicationListener {
 	private static final long FIXED_TIMESTEP_NANOS = (long)(FIXED_TIMESTEP * NANOS_PER_SEC);
 	
 	private Renderer renderer;
+	private BackgroundMusic bgMusic;
 	private World world;
 	private GameplayController controller;
 	private InputMapper input;
+	
 	
 	private long lastFrameTime;
 	private long accumulatedTime;
@@ -20,25 +22,30 @@ public class Game implements ApplicationListener {
 	@Override
 	public void create () {
 		renderer = new Renderer();
+		bgMusic = new BackgroundMusic();
 		world = new World();
-		controller = new GameplayController(world, renderer);
+		controller = new GameplayController(world, renderer, bgMusic);
 		input = new InputMapper(controller);
+		
 		
 		lastFrameTime = TimeUtils.nanoTime();
 	}
 
 	@Override
 	public void render () {
+		if (world.gameCompleted()) { return; }
+		
 		long time = TimeUtils.nanoTime();
 		accumulatedTime += (time - lastFrameTime);
 		lastFrameTime = time;
 		
 		while (accumulatedTime >= FIXED_TIMESTEP_NANOS) {
 			input.poll();
-			world.update(FIXED_TIMESTEP);
+			controller.update(FIXED_TIMESTEP);
 			accumulatedTime -= FIXED_TIMESTEP_NANOS;
 		}
 		
+		if (world.gameCompleted()) { return; }
 		renderer.drawWorld(world);
 	}
 
@@ -63,5 +70,7 @@ public class Game implements ApplicationListener {
 	@Override
 	public void dispose() {
 		renderer.dispose();
+		bgMusic.dispose();
+		world.dispose();
 	}
 }

@@ -33,12 +33,13 @@ public class InputMapper {
 
 			@Override
 			public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+				controller.mouseDown(getMouseWorldPos(screenX, screenY));
 				return false;
 			}
 
 			@Override
 			public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-				controller.mouseClicked(getMouseWorldPos(screenX, screenY));
+				controller.mouseUp(getMouseWorldPos(screenX, screenY));
 				return false;
 			}
 

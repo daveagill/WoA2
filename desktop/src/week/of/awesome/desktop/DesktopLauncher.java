@@ -10,7 +10,7 @@ public class DesktopLauncher {
 	public static void main (String[] arg) {
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
 		config.title = "Rescue My Toys!";
-		config.width = Renderer.WORLD_TO_SCREEN_RATIO * 15;
+		config.width = Renderer.WORLD_TO_SCREEN_RATIO * 17;
 		config.height = Renderer.WORLD_TO_SCREEN_RATIO * 15;
 		config.resizable = false;
 		new LwjglApplication(new Game(), config);

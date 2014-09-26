@@ -6,13 +6,14 @@ public class Tile {
 	public static int TILE_SIZE = 1;
 	
 	public static enum Type {
-		BLOCK,
+		GROUND,
 		START,
 		GOAL,
 		JUMP_SINGLE,
 		JUMP_DOUBLE,
 		JUMP_LEFT,
-		JUMP_RIGHT
+		JUMP_RIGHT,
+		BLOCKER
 	}
 	
 	private Type type;
@@ -52,6 +53,6 @@ public class Tile {
 		int y = (int)position.y;
 		
 		Tile tileBelow = level.getTile(x, y-1);
-		return level.getTile(x, y) == null && tileBelow != null && tileBelow.getType() == Type.BLOCK;
+		return level.getTile(x, y) == null && tileBelow != null && tileBelow.getType() == Type.GROUND;
 	}
 }

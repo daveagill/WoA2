@@ -1,11 +1,18 @@
-Humble Beginnings
-. . S . . . . . .
-. . # . . . . . .
-. . . . . . . # .
-. . . . . . . . .
-. . . . . . . . .
-. . # # # . . . .
-. . . . . . . . .
-#J1 . . . . . . .
-. # F #J1 . J1# .
-# # # # # # # # #
+<level name="Humble Beginnings">
+	<rescue>5</rescue>
+	<map>
+		. . S . . . . . .
+		. . # . # . . . .
+		. . . . . . . # .
+		. . # . . . . . .
+		. . . . . . . . .
+		. . # # # . . . .
+		. . . . . . . . .
+		#J1 . . . . . . .
+		. # F #J1 . J1# .
+		# # # # # # # # #
+	</map>
+	<spawnerConfigs>
+		<spawn amount="5" freq="0.5" />
+	</spawnerConfigs>
+</level>

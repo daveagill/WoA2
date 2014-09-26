@@ -8,24 +8,54 @@ public class GameplayController {
 	
 	private World world;
 	private Renderer renderer;
+	private BackgroundMusic bgMusic;
 	
-	public GameplayController(World world, Renderer renderer) {
+	public GameplayController(World world, Renderer renderer, BackgroundMusic bgMusic) {
 		this.world = world;
 		this.renderer = renderer;
+		this.bgMusic = bgMusic;
 		
 		// install a collision listener that will direct collision events to this controller
 		world.setCollisionListener(new CollisionListener(this));
+		
+		bgMusic.playForLevel(0);
+	}
+	
+	public void update(float dt) {
+		world.update(dt, this);
+		bgMusic.updateFade(dt);
+	}
+	
+	public void levelComplete() {
+		bgMusic.playForLevel(world.getLevel().getNumber()+1);
 	}
 	
 	public void mouseMove(Vector2 screenPos) {
-		world.setCursorPos(screenPos);
+		renderer.notifyMouseMove(screenPos);
 	}
 	
-	public void mouseClicked(Vector2 screenPos) {
-		world.selectDroppableTile( renderer.getTileSelectionOrNull(screenPos) );
+	public void mouseDown(Vector2 screenPos) {
+		renderer.notifyMouseDown();
+	}
+	
+	public void mouseUp(Vector2 screenPos) {
+		renderer.notifyMouseUp();
 		
 		Vector2 levelSpacePos = renderer.convertToLevelSpaceOrNull(screenPos, world.getLevel());
-		world.confirmDroppableTile(levelSpacePos);
+		boolean isWithinLevel = levelSpacePos != null;
+		
+		if (isWithinLevel) {
+			world.confirmDroppableTile(levelSpacePos);
+		}
+		else {
+			world.selectDroppableTile( renderer.getTileSelectionOrNull() );
+		}
+		
+		
+		
+		if (renderer.isMouseWithinKillAllButton()) {
+			world.killRemainingToys();
+		}
 	}
 
 	public CollisionHandler createCollisionHandlerForAToB(Contact contact, Object a, Object b) {
@@ -33,7 +63,7 @@ public class GameplayController {
 			Tile tile = (Tile)a;
 			Toy toy = (Toy)b;
 			
-			if (tile.getType() == Tile.Type.BLOCK) {
+			if (tile.getType() == Tile.Type.GROUND) {
 				boolean vertical = contact.getWorldManifold().getNormal().y > 0.5f;
 				boolean falling = toy.getBody().getLinearVelocity().y < 0;
 				if (vertical && falling) {

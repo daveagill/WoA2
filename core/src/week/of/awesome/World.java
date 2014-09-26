@@ -6,22 +6,19 @@ import java.util.Collections;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
+import com.badlogic.gdx.utils.Disposable;
 
-public class World {
+public class World implements Disposable {
 	private Physics physics = new Physics();
 	
 	private Level level;
 	private Collection<Body> physicalStageBodies = new ArrayList<Body>();
 	
 	private Tile.Type droppableTileType = null;
-	private Vector2 cursorPos;
 	
 	private Collection<Toy> toys = new ArrayList<Toy>();
 	
 	private int numRescued = 0;
-	
-	private static float SPAWN_FREQ = 0.5f;
-	private float countDownToSpawn = 0;
 	
 	public World() {
 		beginLevel(1);
@@ -33,6 +30,14 @@ public class World {
 	
 	public void setCollisionListener(CollisionListener collisionListener) {
 		physics.setCollisionListener(collisionListener);
+	}
+	
+	public boolean gameCompleted() {
+		return level == null;
+	}
+	
+	public int getNumRescued() {
+		return numRescued;
 	}
 	
 	public Level getLevel() {
@@ -49,6 +54,13 @@ public class World {
 		++numRescued;
 	}
 	
+	public void killRemainingToys() {
+		for (Toy t : toys) {
+			physics.killBody(t.getBody());
+		}
+		toys.clear();
+	}
+	
 	public void confirmDroppableTile(Vector2 position) {
 		if (droppableTileType == null || position == null) { return; } // nothing to do
 		
@@ -63,60 +75,45 @@ public class World {
 	}
 	
 	public void selectDroppableTile(Tile.Type tileType) {
-		if (tileType == null) { return; }
-		this.droppableTileType = tileType;
+		// select the type, deselect if it happens to be the same type
+		this.droppableTileType = this.droppableTileType == tileType ? null : tileType;
 	}
 	
 	public Tile.Type getSelectedDroppableTileType() {
 		return droppableTileType;
 	}
 	
-	public void setCursorPos(Vector2 cursorPos) {
-		this.cursorPos = cursorPos;
-	}
-	
-	public Vector2 getCursorPos() {
-		return cursorPos;
-	}
-	
-	public void update(float dt) {
-		if (toys.isEmpty() && numRescued >= level.getNumRescuedNeeded()) {
-			beginLevel(level.getNumber());
-		}
-		
+	public void update(float dt, GameplayController controller) {		
 		physics.update(dt);
 		
 		// spawn new toys
-		countDownToSpawn -= dt;
-		if (countDownToSpawn < 0) {
-			for (Tile startTile : level.getStarterTiles()) {
-				Vector2 spawnPos = startTile.getPosition().add(0, 0.5f);
+		for (Spawner spawner : level.getSpawners()) {
+			if (spawner.isReadyForSpawn(dt)) {
+				Vector2 spawnPos = spawner.getPosition().add(0, 0.5f);
 				Toy toy = new Toy(Toy.Type.BALL, spawnPos, physics);
 				toys.add(toy);
 			}
-			countDownToSpawn = SPAWN_FREQ;
 		}
 		
 		// update toys
 		for (Toy toy : toys) {
 			toy.update(dt);
 		}
+		
+		if (toys.isEmpty() && numRescued >= level.getNumRescuedNeeded()) {
+			controller.levelComplete();
+			beginLevel(level.getNumber() + 1);
+		}
 	}
 	
 	private void beginLevel(int levelNum) {
-		// cleanup any previous physical stage
-		for (Body b : physicalStageBodies) {
-			physics.killBody(b);
+		clean();
+		
+		if (LevelLoader.hasLevel(levelNum)) {
+			// create the next level
+			level = LevelLoader.getLevel(levelNum);
+			buildPhysicalStageFromLevel();
 		}
-		
-		// cleanup other state
-		this.droppableTileType = null;
-		this.countDownToSpawn = 0;
-		this.numRescued = 0;
-		
-		// create the next level
-		level = LevelLoader.getLevel(levelNum);
-		buildPhysicalStageFromLevel();
 	}
 	
 	private void buildPhysicalStageFromLevel() {
@@ -135,12 +132,13 @@ public class World {
 		Body tileBody = null;
 		
 		switch (t.getType()) {
-			case BLOCK: tileBody = physics.createBlockTileBody(t.getPosition()); break;
+			case BLOCKER: // fallthrough...
+			case GROUND: tileBody = physics.createBlockTileBody(t.getPosition()); break;
 			case START: break; // do nothing
 			case GOAL: tileBody = physics.createGoalTileBody(t.getPosition()); break;
-			case JUMP_SINGLE: // fallthrough
+			case JUMP_SINGLE: // fallthrough...
 			case JUMP_DOUBLE: tileBody = physics.createJumpUpTileBody(t.getPosition(), t); break;
-			case JUMP_LEFT: // fallthrough
+			case JUMP_LEFT: // fallthrough...
 			case JUMP_RIGHT: tileBody = physics.createCornerJumpTileBody(t.getPosition(), t); break;
 		}
 		
@@ -148,5 +146,28 @@ public class World {
 			tileBody.setUserData(t);
 			physicalStageBodies.add(tileBody);
 		}
+	}
+
+	
+	private void clean() {
+		// cleanup any previous physical stage
+		for (Body b : physicalStageBodies) {
+			physics.killBody(b);
+		}
+		physicalStageBodies.clear();
+		
+		// cleanup any toys
+		killRemainingToys();
+		
+		// cleanup other state
+		this.droppableTileType = null;
+		this.numRescued = 0;
+		this.level = null;
+	}
+
+	@Override
+	public void dispose() {
+		clean();
+		physics.dispose();
 	}
 }
