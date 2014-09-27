@@ -12,8 +12,15 @@ import com.badlogic.gdx.utils.XmlReader;
 public class LevelLoader {
 
 	public static Level getLevel(int levelNum) {
-		FileHandle file = getLevelFile(levelNum);
-		if (!file.exists()) { throw new RuntimeException("No such file for level: " + levelNum); }
+		return loadLevelFile(getLevelFile("level" + levelNum), levelNum);
+	}
+	
+	public static Level getScreen(String screenName) {
+		return loadLevelFile(getLevelFile(screenName), -1);
+	}
+	
+	public static Level loadLevelFile(FileHandle file, int levelNum) {
+		if (!file.exists()) { throw new RuntimeException("No such level file: " + file.name()); }
 		
 		
 		XmlReader.Element xml = null;
@@ -48,7 +55,7 @@ public class LevelLoader {
 	}
 	
 	public static boolean hasLevel(int levelNum) {
-		return getLevelFile(levelNum).exists();
+		return getLevelFile("level" + levelNum).exists();
 	}
 	
 	private static List<List<Tile>> parseTileGrid(String tileData) {
@@ -120,7 +127,7 @@ public class LevelLoader {
 		return tileGrid;
 	}
 	
-	private static FileHandle getLevelFile(int levelNum) {
-		return Gdx.files.internal("levels/level" + levelNum + ".txt");
+	private static FileHandle getLevelFile(String levelFileName) {
+		return Gdx.files.internal("levels/" + levelFileName + ".txt");
 	}
 }

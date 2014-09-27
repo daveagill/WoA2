@@ -1,0 +1,21 @@
+<level name="Humble Beginnings">
+	<rescue>1</rescue>
+	<map>
+		S . . . . . . F
+		# # # # # # # #
+		. . . . . . . .
+		. . . . . . . .
+		. . . . . . . .
+		. . . . . . . .
+		. . . . . . . .
+		. . . . . . . .
+		. . . . . . . .
+		. . . . . . . .
+		. . . . . . . .
+		. . . . . . . .
+		. . . . . . . .
+	</map>
+	<spawnerConfigs>
+		<spawn amount="1" freq="1" />
+	</spawnerConfigs>
+</level>

@@ -8,15 +8,15 @@ import com.badlogic.gdx.physics.box2d.ContactImpulse;
 import com.badlogic.gdx.physics.box2d.ContactListener;
 import com.badlogic.gdx.physics.box2d.Manifold;
 
-public class CollisionListener implements ContactListener {
+public class CollisionEventDispatcher implements ContactListener {
 
 	private Collection<CollisionHandler> collisionsOnBegin = new ArrayList<CollisionHandler>();
 	private Collection<CollisionHandler> collisionsOnEnd = new ArrayList<CollisionHandler>();
 	
-	private GameplayController controller;
+	private CollisionHandlerFactory collisionHandlerFactory;
 	
-	public CollisionListener(GameplayController controller) {
-		this.controller = controller;
+	public CollisionEventDispatcher(CollisionHandlerFactory collisionHandlerFactory) {
+		this.collisionHandlerFactory = collisionHandlerFactory;
 	}
 	
 	@Override
@@ -69,9 +69,9 @@ public class CollisionListener implements ContactListener {
 		
 		if (a == null || b == null) { return null; }
 		
-		CollisionHandler c = controller.createCollisionHandlerForAToB(contact, a, b);
+		CollisionHandler c = collisionHandlerFactory.createCollisionHandlerForAToB(contact, a, b);
 		if (c == null) {
-			c = controller.createCollisionHandlerForAToB(contact, b, a);
+			c = collisionHandlerFactory.createCollisionHandlerForAToB(contact, b, a);
 		}
 		
 		return c;

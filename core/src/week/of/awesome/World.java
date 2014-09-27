@@ -6,10 +6,12 @@ import java.util.Collections;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
+import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.utils.Disposable;
 
 public class World implements Disposable {
-	private Physics physics = new Physics();
+	private Physics physics;
+	private WorldEvents worldEvents;
 	
 	private Level level;
 	private Collection<Body> physicalStageBodies = new ArrayList<Body>();
@@ -21,15 +23,73 @@ public class World implements Disposable {
 	private int numRescued = 0;
 	
 	public World() {
-		beginLevel(1);
+		// install a CollisionHandler-factory to respond to physical events
+		physics = new Physics(getCollisionHandlerFactory());
 	}
 	
+	private CollisionHandlerFactory getCollisionHandlerFactory() {
+		return new CollisionHandlerFactory() {
+			public CollisionHandler createCollisionHandlerForAToB(Contact contact, Object a, Object b) {
+				if (a instanceof Tile && b instanceof Toy) {
+					Tile tile = (Tile)a;
+					Toy toy = (Toy)b;
+					
+					if (tile.getType() == Tile.Type.GROUND) {
+						boolean vertical = contact.getWorldManifold().getNormal().y > 0.5f;
+						boolean falling = toy.getBody().getLinearVelocity().y < 0;
+						if (vertical && falling) {
+							return CollisionHandler.onPreSolve(() -> {
+								contact.setRestitution(0); // prevent any bouncing
+								toy.landed();
+							});
+						}
+					}
+					
+					if (tile.getType() == Tile.Type.GOAL) {
+						return CollisionHandler.onBegin(() -> {
+							rescueToy(toy);
+							worldEvents.onRescue();
+						});
+					}
+					
+					if (tile.getType() == Tile.Type.JUMP_SINGLE) {
+						
+						return CollisionHandler.onBegin(() -> {
+							toy.jump(new Vector2(0, 5f));
+							worldEvents.onJump();
+						});
+					}
+					
+					if (tile.getType() == Tile.Type.JUMP_DOUBLE) {
+						return CollisionHandler.onBegin(() -> {
+							toy.jump(new Vector2(0, 8f));
+							worldEvents.onJump();
+						});
+					}
+					
+					if (tile.getType() == Tile.Type.JUMP_LEFT) {
+						return CollisionHandler.onBegin(() -> {
+							toy.jump(new Vector2(-5f, 8f));
+							worldEvents.onJump();
+						});
+					}
+					
+					if (tile.getType() == Tile.Type.JUMP_RIGHT) {
+						return CollisionHandler.onBegin(() -> {
+							toy.jump(new Vector2(5f, 5f));
+							worldEvents.onJump();
+						});
+					}
+				
+				}
+				
+				return null;
+			}
+		};
+	}
+
 	public com.badlogic.gdx.physics.box2d.World getB2d() {
 		return physics.getB2d();
-	}
-	
-	public void setCollisionListener(CollisionListener collisionListener) {
-		physics.setCollisionListener(collisionListener);
 	}
 	
 	public boolean gameCompleted() {
@@ -46,12 +106,6 @@ public class World implements Disposable {
 	
 	public Collection<Toy> getToys() {
 		return Collections.unmodifiableCollection(toys);
-	}
-	
-	public void rescueToy(Toy toy) {
-		toys.remove(toy);
-		physics.killBody(toy.getBody());
-		++numRescued;
 	}
 	
 	public void killRemainingToys() {
@@ -83,7 +137,8 @@ public class World implements Disposable {
 		return droppableTileType;
 	}
 	
-	public void update(float dt, GameplayController controller) {		
+	public void update(float dt, WorldEvents worldEvents) {
+		this.worldEvents = worldEvents; // stash this here for the benefit of physics events
 		physics.update(dt);
 		
 		// spawn new toys
@@ -101,19 +156,20 @@ public class World implements Disposable {
 		}
 		
 		if (toys.isEmpty() && numRescued >= level.getNumRescuedNeeded()) {
-			controller.levelComplete();
-			beginLevel(level.getNumber() + 1);
+			worldEvents.onLevelComplete(level.getNumber());
 		}
 	}
 	
-	private void beginLevel(int levelNum) {
+	public void beginLevel(Level level) {
 		clean();
-		
-		if (LevelLoader.hasLevel(levelNum)) {
-			// create the next level
-			level = LevelLoader.getLevel(levelNum);
-			buildPhysicalStageFromLevel();
-		}
+		this.level = level;
+		buildPhysicalStageFromLevel();
+	}
+	
+	private void rescueToy(Toy toy) {
+		toys.remove(toy);
+		physics.killBody(toy.getBody());
+		++numRescued;
 	}
 	
 	private void buildPhysicalStageFromLevel() {

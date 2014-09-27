@@ -12,15 +12,15 @@ import com.badlogic.gdx.utils.Disposable;
 
 public class Physics implements Disposable {
 	private com.badlogic.gdx.physics.box2d.World b2dSim = new com.badlogic.gdx.physics.box2d.World(new Vector2(0, -10), true);
-	private CollisionListener collisionListener;
+	private CollisionEventDispatcher collisionListener;
+	
+	public Physics(CollisionHandlerFactory collisionHandlerFactory) {
+		collisionListener = new CollisionEventDispatcher(collisionHandlerFactory);
+		b2dSim.setContactListener(collisionListener);
+	}
 
 	public com.badlogic.gdx.physics.box2d.World getB2d() {
 		return b2dSim;
-	}
-	
-	public void setCollisionListener(CollisionListener listener) {
-		b2dSim.setContactListener(listener);
-		this.collisionListener = listener;
 	}
 
 	public Body createToyBody(Vector2 position, Toy userData) {
