@@ -30,16 +30,23 @@ public class BackgroundMusic implements Disposable {
 	
 	public void playForLevel(int levelNum) {
 		previouslyPlaying = currentlyPlaying;
-		currentlyPlaying = musics.get(levelNum-1 % musics.size());
+		currentlyPlaying = musics.get((levelNum-1) % musics.size());
+		currentlyPlaying.stop();
 		currentlyPlaying.setVolume(0);
-		currentlyPlaying.play();
+		
+		// if no previous then just start playing immediately
+		if (previouslyPlaying == null) {
+			currentlyPlaying.play();
+		}
 	}
 	
 	public void update(float dt) {
 		if (previouslyPlaying != null) {
 			previouslyPlaying.setVolume( Math.max(0, (previouslyPlaying.getVolume() * FADE_DURATION - dt) / FADE_DURATION) );
 			if (previouslyPlaying.getVolume() == 0) {
+				previouslyPlaying.stop();
 				previouslyPlaying = null;
+				currentlyPlaying.play();
 			}
 		}
 		else if (currentlyPlaying != null) {

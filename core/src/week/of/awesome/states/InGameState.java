@@ -8,6 +8,7 @@ import week.of.awesome.BackgroundMusic;
 import week.of.awesome.BasicRenderer;
 import week.of.awesome.GameplayController;
 import week.of.awesome.GameplayRenderer;
+import week.of.awesome.Sounds;
 import week.of.awesome.World;
 
 public class InGameState implements GameState {
@@ -18,9 +19,9 @@ public class InGameState implements GameState {
 	
 	private GameState gameCompletedState;
 	
-	public InGameState(BasicRenderer basicRenderer, BackgroundMusic bgMusic) {
+	public InGameState(BasicRenderer basicRenderer, BackgroundMusic bgMusic, Sounds sounds) {
 		renderer = new GameplayRenderer(basicRenderer);
-		controller = new GameplayController(renderer, bgMusic);
+		controller = new GameplayController(renderer, bgMusic, sounds);
 	}
 	
 	public void setGameCompletedState(GameState gameCompleted) {
@@ -57,9 +58,9 @@ public class InGameState implements GameState {
 	}
 
 	@Override
-	public void render() {
+	public void render(float dt) {
 		if (world.gameCompleted()) { return; }
-		renderer.drawWorld(world);
+		renderer.drawWorld(world, dt);
 	}
 
 }

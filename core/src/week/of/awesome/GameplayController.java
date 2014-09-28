@@ -11,35 +11,53 @@ public class GameplayController implements WorldEvents {
 	private World world;
 	private GameplayRenderer renderer;
 	private BackgroundMusic bgMusic;
+	private Sounds sounds;
 	
-	public GameplayController(GameplayRenderer renderer, BackgroundMusic bgMusic) {
+	public GameplayController(GameplayRenderer renderer, BackgroundMusic bgMusic, Sounds sounds) {
 		this.renderer = renderer;
 		this.bgMusic = bgMusic;
+		this.sounds = sounds;
 	}
 	
 	public void startGame(World world) {
 		this.world = world;
 		bgMusic.playForLevel(START_LEVEL);
-		beginLevel(START_LEVEL);
+		beginLevel(START_LEVEL, false);
 	}
 	
 	@Override
 	public void onLevelComplete(int levelNum) {
 		int nextLevelNum = levelNum+1;
-		bgMusic.playForLevel(nextLevelNum);
-		beginLevel(nextLevelNum);
+		if (beginLevel(nextLevelNum, false)) {
+			bgMusic.playForLevel(nextLevelNum);
+		} else {
+			world.beginLevel(null, false);
+		}
+	}
+	
+	@Override
+	public void onLevelFailed(int levelNum) {
+		beginLevel(levelNum, true); // restart 
 	}
 	
 	@Override
 	public void onJump() {
-		// TODO Auto-generated method stub
-		
+		sounds.playJump();
 	}
 
 	@Override
 	public void onRescue() {
-		// TODO Auto-generated method stub
-		
+		sounds.playRescued();
+	}
+	
+	@Override
+	public void onToySpawn() {
+		sounds.playSpawn();
+	}
+	
+	@Override
+	public void onToyDeath() {
+		sounds.playDie();
 	}
 	
 	public void mouseUp() {
@@ -58,11 +76,13 @@ public class GameplayController implements WorldEvents {
 		}
 	}
 	
-	private void beginLevel(int levelNum) {
+	private boolean beginLevel(int levelNum, boolean beginImmediately) {
 		if (LevelLoader.hasLevel(levelNum)) {
 			// create the next level
 			Level level = LevelLoader.getLevel(levelNum);
-			world.beginLevel(level);
+			world.beginLevel(level, beginImmediately);
+			return true;
 		}
+		return false;
 	}
 }

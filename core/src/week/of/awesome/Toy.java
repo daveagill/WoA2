@@ -6,10 +6,14 @@ import com.badlogic.gdx.physics.box2d.Body;
 public class Toy {
 	public static final float TOY_SIZE = 0.4f;
 	private static final float STANDARD_HORIZONTAL_SPEED = 2f;
+	private static final float VERTICAL_JUMP_HORIZONTAL_SPEED = 1.8f;
 	
 	public static enum Type {
 		BALL,
-		BEAR
+		BEAR,
+		SPINNER,
+		TRAIN,
+		DUCK
 	}
 	
 	public static enum Facing {
@@ -47,7 +51,8 @@ public class Toy {
 	}
 	
 	public void jump(Vector2 jumpVelocity) {
-		horizontalVelocity = jumpVelocity.x == 0 ? horizontalVelocity : jumpVelocity.x;
+		float sign = getFacing() == Facing.RIGHT ? 1 : -1;
+		horizontalVelocity = jumpVelocity.x == 0 ? VERTICAL_JUMP_HORIZONTAL_SPEED*sign : jumpVelocity.x;
 		body.setLinearVelocity(horizontalVelocity, jumpVelocity.y);
 	}
 	

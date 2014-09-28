@@ -1,5 +1,7 @@
 package week.of.awesome.states;
 
+import java.util.Collections;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.InputProcessor;
@@ -9,20 +11,22 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont.HAlignment;
 import com.badlogic.gdx.graphics.g2d.BitmapFont.TextBounds;
 import com.badlogic.gdx.math.Vector2;
 
+import week.of.awesome.BackgroundMusic;
 import week.of.awesome.BasicRenderer;
 import week.of.awesome.Level;
 import week.of.awesome.LevelLoader;
-import week.of.awesome.LevelRenderer;
+import week.of.awesome.MapRenderer;
 import week.of.awesome.World;
 import week.of.awesome.WorldEvents;
 
 public class StartScreenState implements GameState {
 	
 	private static final String MENU_TEXT = "Play!";
-	private static final int MENU_Y = 150;
+	private static final int MENU_Y = 100;
 
+	private BackgroundMusic bgMusic;
 	private BasicRenderer renderer;
-	private LevelRenderer levelRenderer;
+	private MapRenderer mapRenderer;
 	private World world;
 	
 	private GameState beginPlaying;
@@ -40,17 +44,18 @@ public class StartScreenState implements GameState {
 	// indicate user click play
 	boolean clickedPlay;
 	
-	public StartScreenState(BasicRenderer renderer) {
+	public StartScreenState(BasicRenderer renderer, BackgroundMusic bgMusic) {
+		this.bgMusic = bgMusic;
 		this.renderer = renderer;
-		levelRenderer = new LevelRenderer(renderer);
+		mapRenderer = new MapRenderer(renderer);
 		
 		midX = Gdx.graphics.getWidth()/2;
 		midY = Gdx.graphics.getHeight()/2;
-		levelRenderer.setMapCenterPos(midX, midY);
+		mapRenderer.setMapCenterPos(midX, midY);
 		
-		backgroundTex = renderer.newRepeatingTexture("bottomUIBackground.png");
-		highlightBackgroundTex = renderer.newRepeatingTexture("paletteHighlightBackground.png");
-		logoTex = renderer.newTexture("ground.png");
+		backgroundTex = renderer.newRepeatingTexture("UI/menuScreenBackground.png");//("UI/bottomUIBackground.png");
+		highlightBackgroundTex = renderer.newRepeatingTexture("UI/paletteHighlightBackground.png");
+		logoTex = renderer.newTexture("UI/logo.png");
 		
 		font = renderer.newFont("BABYCAKE");
 	}
@@ -64,6 +69,8 @@ public class StartScreenState implements GameState {
 		world = new World();
 		restartLevelScreen();
 		clickedPlay = false;
+		
+		bgMusic.playForLevel(1);
 	}
 	
 	@Override
@@ -82,20 +89,32 @@ public class StartScreenState implements GameState {
 			public void onLevelComplete(int levelNum) {
 				restartLevelScreen();
 			}
-
+			@Override public void onLevelFailed(int levelNum) {
+				restartLevelScreen(); // hopefully not necessary!
+			}
+			
 			@Override public void onJump() { }
 			@Override public void onRescue() { }
+			@Override public void onToySpawn() { }
+			@Override public void onToyDeath() { }
 		});
 		
 		return clickedPlay ? beginPlaying : null;
 	}
 
 	@Override
-	public void render() {
+	public void render(float dt) {
+		// background
 		renderer.drawRepeating(backgroundTex, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		levelRenderer.drawLevel(world.getLevel(), world.getToys());
+		
+		// idle level tiles only
+		mapRenderer.drawLevel(world.getLevel(), Collections.emptyList(), true, dt);
+		
+		// logo
 		renderer.drawCentered(logoTex, new Vector2(midX, midY), logoTex.getWidth(), logoTex.getHeight());
-	
+		
+		// idle level toys (over top of logo!)
+		mapRenderer.drawLevel(world.getLevel(), world.getToys(), false, dt);
 		
 		// draw the menu...
 		
@@ -112,6 +131,6 @@ public class StartScreenState implements GameState {
 	
 	private void restartLevelScreen() {
 		Level level = LevelLoader.getScreen("StartScreen");
-		world.beginLevel(level);
+		world.beginLevel(level, true);
 	}
 }

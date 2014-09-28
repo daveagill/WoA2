@@ -28,6 +28,7 @@ public class Physics implements Disposable {
 		bodyDef.type = BodyDef.BodyType.DynamicBody;
 		bodyDef.fixedRotation = true;
 		bodyDef.position.set(position);
+		//bodyDef.linearDamping = 0.3f;
 		
 		Body body = b2dSim.createBody(bodyDef);
 		body.setUserData(userData);
@@ -62,6 +63,27 @@ public class Physics implements Disposable {
 		fixtureDef.shape = box;
 		fixtureDef.friction = 0;
 		fixtureDef.restitution = 1;
+		
+		body.createFixture(fixtureDef);
+		
+		return body;
+	}
+	
+	public Body createKillerTileBody(Vector2 position, Tile tile) {
+		BodyDef bodyDef = new BodyDef();
+		bodyDef.type = BodyDef.BodyType.StaticBody;
+		bodyDef.position.set(position);
+		
+		Body body = b2dSim.createBody(bodyDef);
+		body.setUserData(tile);
+		
+		float heightScale = 10f;
+		PolygonShape box = new PolygonShape();
+		box.setAsBox(Tile.TILE_SIZE/3f, Tile.TILE_SIZE/heightScale, new Vector2(0, -Tile.TILE_SIZE/2f + Tile.TILE_SIZE/heightScale), 0);
+		
+		FixtureDef fixtureDef = new FixtureDef();
+		fixtureDef.shape = box;
+		fixtureDef.isSensor = true;
 		
 		body.createFixture(fixtureDef);
 		

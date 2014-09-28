@@ -13,10 +13,13 @@ import com.badlogic.gdx.Files.FileType;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
+import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
 
 public class BasicRenderer implements Disposable {
@@ -115,7 +118,17 @@ public class BasicRenderer implements Disposable {
 	}
 	
 	public void drawCentered(Texture t, Vector2 pos, float width, float height) {
-		batch.draw(t, pos.x - width/2, pos.y - height/2, width, height);
+		drawCentered(t, pos, width, height, false);
+	}
+	
+	public void drawCentered(Texture t, Vector2 pos, float width, float height, boolean flipX) {
+		float actualWidth = flipX ? -width : width;
+		batch.draw(t, pos.x - actualWidth/2, pos.y - height/2, actualWidth, height);
+	}
+	
+	public void drawCentered(TextureRegion t, Vector2 pos, float width, float height, boolean flipX) {
+		float actualWidth = flipX ? -width : width;
+		batch.draw(t, pos.x - actualWidth/2, pos.y - height/2, actualWidth, height);
 	}
 	
 	public void drawRepeating(Texture t, int x, int y, int width, int height) {
@@ -136,6 +149,15 @@ public class BasicRenderer implements Disposable {
 		Texture t = newTexture(path);
 		t.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		return t;
+	}
+	
+	public Animation newAnimation(String pathAndNameStart, int numFrames) {
+		Array<TextureRegion> frames = new Array<TextureRegion>(numFrames);
+		for (int i = 0; i < numFrames; ++i) {
+			Texture t = newTexture(pathAndNameStart + "_frame" + (i+1) + ".png");
+			frames.add(new TextureRegion(t));
+		}
+		return new Animation(1f/numFrames, frames, Animation.PlayMode.LOOP);
 	}
 	
 	public BitmapFont newFont(String name) {

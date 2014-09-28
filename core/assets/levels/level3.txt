@@ -1,0 +1,25 @@
+<level name="Humble Beginnings">
+	<rescue>5</rescue>
+	<map>
+		. . S . . . . . .
+		. . # . # . . . .
+		. . . . . . . # .
+		. . # . . . . . .
+		. . . . . . . . .
+		. . # # # . . . .
+		. . . . . . . . .
+		#J1 . . . . . . .
+		. # F #J1 . . # .
+		# # # # # # # # #
+	</map>
+	<spawnerConfigs>
+		<spawn amount="5" freq="0.5" />
+	</spawnerConfigs>
+	<inventory>
+		<blockers available="5" />
+		<jumpSingle available="5" />
+		<jumpDouble available="5" />
+		<jumpLeft available="5" />
+		<jumpRight available="5" />
+	</inventory>
+</level>

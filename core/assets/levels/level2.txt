@@ -1,18 +1,27 @@
-<level name="Level 2">
+<level name="Humble Beginnings">
 	<rescue>5</rescue>
 	<map>
-		. . S . . . . . #
-		. . # # # . . . #
-		. . . . . . . . #
-		. . . . . . . . #
-		. . . . . . . . #
-		. . . . . . . . #
-		. . . . . . . . #
-		#J1 . . . . . . #
-		. # F . J1. J1# #
-		# # # # # # # # #
+		# # # # # # # # # # # # # # # # #
+		# . . . . . . . . . . . . . . . #
+		# . . . . . . . F . . . . . . . #
+		#JR . . . . # # # # # . . . . JL#
+		# . . . . JL# . . . #JR . . . . #
+		#JR . . . . . . . . . . . . . JL#
+		# # # . # # # # . # # # # . # # #
+		# # # . . . . . . . . . . . # # #
+		# . . . . . . . . . . . . . . . #
+		# . . . . . # # # # # . . . . . #
+		# X # S . . . . . . . . . . # X #
+		# # # # # # # # # # # # # # # # #
 	</map>
 	<spawnerConfigs>
-		<spawn amount="500000000" freq="0.5" />
+		<spawn amount="5" freq="0.5" />
 	</spawnerConfigs>
+	<inventory>
+		<blockers available="5" />
+		<jumpSingle available="5" />
+		<jumpDouble available="5" />
+		<jumpLeft available="5" />
+		<jumpRight available="5" />
+	</inventory>
 </level>

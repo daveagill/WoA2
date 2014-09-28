@@ -1,6 +1,7 @@
 package week.of.awesome;
 
 import week.of.awesome.states.GameState;
+import week.of.awesome.states.GenericDialogState;
 import week.of.awesome.states.InGameState;
 import week.of.awesome.states.StartScreenState;
 
@@ -19,9 +20,12 @@ public class Game implements ApplicationListener {
 	private InputMultiplexer inputMultiplexer;
 	private BasicRenderer renderer;
 	private BackgroundMusic bgMusic;
+	private Sounds sounds;
 	
 	private GameState currentState;
 	private StartScreenState startScreen;
+	private GenericDialogState introScreen;
+	private GenericDialogState gameWonScreen;
 	private InGameState inGame;
 	
 	
@@ -34,14 +38,31 @@ public class Game implements ApplicationListener {
 		Gdx.input.setInputProcessor(inputMultiplexer);
 		
 		bgMusic = new BackgroundMusic();
+		sounds = new Sounds();
 		renderer = new BasicRenderer(inputMultiplexer);
 		
-		startScreen = new StartScreenState(renderer);
-		inGame = new InGameState(renderer, bgMusic);
+		startScreen = new StartScreenState(renderer, bgMusic);
+		introScreen = new GenericDialogState(renderer);
+		gameWonScreen = new GenericDialogState(renderer);
+		inGame = new InGameState(renderer, bgMusic, sounds);
+		
+		introScreen.addDialog("The maniacal Dr. Frankenstein has stolen all the world's toys...");
+		introScreen.addDialog("And given them LIFE to use them as slaves in his castle!");
+		introScreen.addDialog("Luckily the toys managed to escape from the Dr's clutches...");
+		introScreen.addDialog("Now they find themselves lost and far from home...");
+		
+		gameWonScreen.addDialog("Well I don't believe it...");
+		gameWonScreen.addDialog("You have got ALL the remaining toys to safety!");
+		gameWonScreen.addDialog("I wonder what adventures those toys will get up to next...");
+		gameWonScreen.addDialog("Maybe someone will make an animated CGI movie about it?..");
+		gameWonScreen.addDialog("Nah! Not likely.");
+		gameWonScreen.addDialog("Thank you for playing!");
 		
 		// wire up gamestates
-		startScreen.setBeginPlayingState(inGame);
-		inGame.setGameCompletedState(startScreen);
+		startScreen.setBeginPlayingState(introScreen);
+		introScreen.setNextGameState(inGame);
+		inGame.setGameCompletedState(gameWonScreen);
+		gameWonScreen.setNextGameState(startScreen);
 		
 		currentState = startScreen;
 		currentState.onEnter();
@@ -56,6 +77,8 @@ public class Game implements ApplicationListener {
 		accumulatedTime += (time - lastFrameTime);
 		lastFrameTime = time;
 		
+		float amountUpdatedDt = 0; // accumulates how much time we simulated, so we can do the same in rendering
+		
 		while (accumulatedTime >= FIXED_TIMESTEP_NANOS) {
 			bgMusic.update(FIXED_TIMESTEP);
 			
@@ -66,18 +89,19 @@ public class Game implements ApplicationListener {
 				nextState.onEnter();
 				
 				// swap the input processor for the new state's
-				InputProcessor inputProcessor = GameState.getNonNullInputProcessor(currentState);
+				InputProcessor inputProcessor = GameState.getNonNullInputProcessor(nextState);
 				inputMultiplexer.removeProcessor(inputMultiplexer.getProcessors().size-1);
 				inputMultiplexer.addProcessor(inputProcessor);
 			}
 			currentState = nextState;
 			
 			accumulatedTime -= FIXED_TIMESTEP_NANOS;
+			amountUpdatedDt += FIXED_TIMESTEP;
 		}
 		
 		renderer.begin();
 		renderer.resetTransform();
-		currentState.render();
+		currentState.render(amountUpdatedDt);
 		renderer.end();
 	}
 

@@ -13,7 +13,8 @@ public class Tile {
 		JUMP_DOUBLE,
 		JUMP_LEFT,
 		JUMP_RIGHT,
-		BLOCKER
+		BLOCKER,
+		KILLER
 	}
 	
 	private Type type;

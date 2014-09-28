@@ -21,10 +21,8 @@ public class GameplayRenderer {
 	private static final int PALETTE_FONT_VERTICAL_ALLOWANCE = 16;
 	
 	private BasicRenderer renderer;
-	private LevelRenderer levelRenderer;
+	private MapRenderer mapRenderer;
 	
-	//private int stageMidX;
-	//private int stageMidY;
 	private int bottomUiWidth = Gdx.graphics.getWidth() - 100;
 	private int screenWidth;
 	private int screenHeight;
@@ -45,6 +43,7 @@ public class GameplayRenderer {
 	// fonts
 	BitmapFont statsFont;
 	BitmapFont inventoryFont;
+	BitmapFont levelNameFont;
 	
 	// background
 	private Texture outOfBoundsBackgroundTex;
@@ -60,26 +59,27 @@ public class GameplayRenderer {
 	
 	public GameplayRenderer(BasicRenderer renderer) {
 		this.renderer = renderer;
-		this.levelRenderer = new LevelRenderer(renderer);
+		this.mapRenderer = new MapRenderer(renderer);
 		
 		statsFont = renderer.newFont("BABYCAKE_small");
 		inventoryFont = renderer.newFont("Montserrat-Bold");
+		levelNameFont = renderer.newFont("BABYCAKE_large_yellow");
 		
-		this.outOfBoundsBackgroundTex = renderer.newRepeatingTexture("outOfBounds.png");
-		this.mainBackgroundTex = renderer.newRepeatingTexture("mainBackground.png");
-		this.bottomUiBackgroundTex = renderer.newRepeatingTexture("bottomUIBackground.png");
-		this.toolPaletteBackgroundTex = renderer.newRepeatingTexture("paletteBackground.png");
-		this.paletteHighlightBackgroundTex = renderer.newRepeatingTexture("paletteHighlightBackground.png");
+		this.outOfBoundsBackgroundTex = renderer.newRepeatingTexture("UI/outOfBounds.png");
+		this.mainBackgroundTex = renderer.newRepeatingTexture("maps/themed/grassy/mainBackground.png");
+		this.bottomUiBackgroundTex = renderer.newRepeatingTexture("UI/bottomUIBackground.png");
+		this.toolPaletteBackgroundTex = renderer.newRepeatingTexture("UI/paletteBackground.png");
+		this.paletteHighlightBackgroundTex = renderer.newRepeatingTexture("UI/paletteHighlightBackground.png");
 		
-		this.killAllButtonTex = renderer.newTexture("killAll.png");
-		this.killAllButtonPressedTex = renderer.newTexture("killAll_down.png");
+		this.killAllButtonTex = renderer.newTexture("UI/killAll.png");
+		this.killAllButtonPressedTex = renderer.newTexture("UI/killAll_down.png");
 		
 		this.screenWidth = Gdx.graphics.getWidth();
 		this.screenHeight = Gdx.graphics.getHeight();
 		
 		int stageMidX = Gdx.graphics.getWidth() / 2;
 		int stageMidY = BOTTOM_UI_PANE_HEIGHT + (Gdx.graphics.getHeight() - BOTTOM_UI_PANE_HEIGHT) / 2;
-		levelRenderer.setMapCenterPos(stageMidX, stageMidY);
+		mapRenderer.setMapCenterPos(stageMidX, stageMidY);
 		
 		calculateToolPaletteUI();
 		calculateResetButtonUI();
@@ -115,7 +115,7 @@ public class GameplayRenderer {
 	}
 	
 	public Vector2 getLevelSpaceMousePositionOrNull(Level level) {
-		return levelRenderer.getLevelSpaceMousePositionOrNull(level);
+		return mapRenderer.getLevelSpaceMousePositionOrNull(level);
 	}
 	
 	public Tile.Type getTileSelectionOrNull() {
@@ -183,26 +183,26 @@ public class GameplayRenderer {
 		boolean isTileSelected = selectedTileType != null;
 		if (!mouseLostTile && isTileSelected) {
 			
-			Vector2 levelSpaceCursorPos = levelRenderer.getLevelSpaceMousePositionOrNull(level);
+			Vector2 levelSpaceCursorPos = mapRenderer.getLevelSpaceMousePositionOrNull(level);
 			boolean isWithinLevel = levelSpaceCursorPos != null;
 			
 			Tile tile = new Tile(selectedTileType, levelSpaceCursorPos);
 			boolean isTileDroppable = isWithinLevel && tile.isPositionViableForLevel(level);
 			
 			if (isTileDroppable) {
-				levelRenderer.useLevelTransform(level);
-				levelRenderer.drawTile(tile);
+				mapRenderer.useLevelTransform(level);
+				mapRenderer.drawTile(tile);
 				useUITransform();
 			}
 			else {
 				renderer.getBatch().setColor(1f, 1f, 1f, 0.7f);
-				levelRenderer.drawTile(tile, renderer.getMousePos(), WORLD_TO_UI_RATIO);
+				mapRenderer.drawTile(tile, renderer.getMousePos(), WORLD_TO_UI_RATIO);
 				renderer.getBatch().setColor(1f, 1f, 1f, 1f);
 			}
 		}
 	}
 	
-	private void drawToolPalette(Tile.Type selectedTileType) {
+	private void drawToolPalette(Tile.Type selectedTileType, Inventory inventory) {
 	
 		renderer.drawRepeating(
 				toolPaletteBackgroundTex,
@@ -227,10 +227,11 @@ public class GameplayRenderer {
 				int highlightHeight = tileScreenHeight + highlightPadding*2;
 				renderer.drawRepeating(paletteHighlightBackgroundTex, highlightLeftX, highlightLeftY, highlightWidth, highlightHeight);
 			}
-			levelRenderer.drawTile(t, tilePos, WORLD_TO_UI_RATIO);
+			mapRenderer.drawTile(t, tilePos, WORLD_TO_UI_RATIO);
 			
+			String text = "x" + inventory.getNumAvailable(t.getType());
 			float fontY = tilePos.y - tileScreenHeight/2 - PALETTE_FONT_VERTICAL_ALLOWANCE/2;
-			inventoryFont.drawMultiLine(renderer.getBatch(), "x3", tilePos.x, fontY, 0, HAlignment.CENTER);
+			inventoryFont.drawMultiLine(renderer.getBatch(), text, tilePos.x, fontY, 0, HAlignment.CENTER);
 		}
 	}
 	
@@ -242,7 +243,7 @@ public class GameplayRenderer {
 				screenWidth,
 				BOTTOM_UI_PANE_HEIGHT);
 		
-		drawToolPalette(world.getSelectedDroppableTileType());
+		drawToolPalette(world.getSelectedDroppableTileType(), world.getLevel().getInventory());
 		
 		// draw kill all button
 		Vector2 killButtonCenter = new Vector2(uiKillButtonBounds.x + killAllButtonTex.getWidth()/2, uiKillButtonBounds.y + killAllButtonTex.getHeight()/2);
@@ -258,10 +259,10 @@ public class GameplayRenderer {
 		statsFont.drawMultiLine(renderer.getBatch(), numRescued + "\n" + numRequired, statsRightX, fontY + fudgeY, 0, HAlignment.RIGHT);
 	}
 	
-	public void drawWorld(World world) {
+	public void drawWorld(World world, float dt) {
 		renderer.drawRepeating(outOfBoundsBackgroundTex, 0, BOTTOM_UI_PANE_HEIGHT, screenWidth, screenHeight);
-		Rectangle bounds = levelRenderer.getLevelBounds(world.getLevel());
-		
+		Rectangle bounds = mapRenderer.getLevelBounds(world.getLevel());
+			
 		renderer.drawRepeating(
 				mainBackgroundTex,
 				(int)bounds.x - MAIN_BACKGROUND_MARGIN,
@@ -269,13 +270,31 @@ public class GameplayRenderer {
 				(int)bounds.width + MAIN_BACKGROUND_MARGIN*2,
 				(int)bounds.height + MAIN_BACKGROUND_MARGIN*2);
 		
-		levelRenderer.drawLevel(world.getLevel(), world.getToys());
+		mapRenderer.drawLevel(world.getLevel(), world.getToys(), true, dt);
 		
 		drawBottomUI(world);
 		drawCursorAndDroppableTile(world.getSelectedDroppableTileType(), world.getLevel());
-				
 		
-		//levelRenderer.drawPhysicsDebug(world);
+		// fade out the level by drawing a square over the level
+		if (world.getTransitionPercent() != null) {
+			
+			// draw obscuring square
+			renderer.getBatch().setColor(1f, 1f, 1f, world.getTransitionPercent());
+			renderer.drawRepeating(toolPaletteBackgroundTex, 0, 0, screenWidth, screenHeight);
+			renderer.getBatch().setColor(1f, 1f, 1f, 1f);
+			
+			if (world.levelNotStartedYet()) {
+				// write level name
+				levelNameFont.setColor(1f, 1f, 1f, world.getTransitionPercent());
+				String text = "Level " + world.getLevel().getNumber() + "\n\"" + world.getLevel().getName() + "\"";
+				int fontY = (int) (screenHeight/2f + levelNameFont.getLineHeight());
+				levelNameFont.drawMultiLine(renderer.getBatch(), text, screenWidth/2f, fontY, 0f, HAlignment.CENTER);
+				levelNameFont.setColor(1f, 1f, 1f, 1f);
+			}
+		}
+		
+		
+		//mapRenderer.drawPhysicsDebug(world);
 	}
 	
 }

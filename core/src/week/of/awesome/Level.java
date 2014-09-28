@@ -10,6 +10,7 @@ public class Level {
 	private List<Tile> tiles;
 	private List<Spawner> spawners = new ArrayList<Spawner>();
 	private Collection<Tile> goalTiles = new ArrayList<Tile>();
+	private Inventory inventory = new Inventory();
 	private String name;
 	private int number;
 	private int numRescuedNeeded = 5;
@@ -47,6 +48,7 @@ public class Level {
 	public String getName() { return name; }
 	public int getNumber() { return number; }
 	public int getNumRescuedNeeded() { return numRescuedNeeded; }
+	public Inventory getInventory() { return inventory; }
 	public int getWidth() { return width; }
 	public int getHeight() { return height; }
 	
@@ -76,6 +78,21 @@ public class Level {
 	
 	public Collection<Tile> getGoalTiles() {
 		return goalTiles;
+	}
+	
+	public boolean hasSpawnRemaining() {
+		for (Spawner spawner : spawners) {
+			if (spawner.getSpawnRemaining() > 0) { return true; }
+		}
+		return false;
+	}
+	
+	public int getSpawnRemaining() {
+		int remaining = 0;
+		for (Spawner spawner : spawners) {
+			remaining += spawner.getSpawnRemaining();
+		}
+		return remaining;
 	}
 	
 	private int index(int x, int y) {

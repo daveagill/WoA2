@@ -3,6 +3,7 @@ package week.of.awesome;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Random;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
@@ -10,6 +11,12 @@ import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.utils.Disposable;
 
 public class World implements Disposable {
+	private static final float LEVEL_FADE_OUT_DURATION = 0.5f;
+	private static final float LEVEL_FADE_IN_DURATION = 1f;
+	private static final float LEVEL_PRE_LEVEL_WAIT = 2f;
+	
+	private Random random = new Random(System.currentTimeMillis());
+	
 	private Physics physics;
 	private WorldEvents worldEvents;
 	
@@ -19,8 +26,12 @@ public class World implements Disposable {
 	private Tile.Type droppableTileType = null;
 	
 	private Collection<Toy> toys = new ArrayList<Toy>();
+	private Collection<Toy> dyingToys = new ArrayList<Toy>();
 	
 	private int numRescued = 0;
+	
+	private Float transitionPercent = null;
+	private Float preTransitionPausePercent = null;
 	
 	public World() {
 		// install a CollisionHandler-factory to respond to physical events
@@ -55,29 +66,36 @@ public class World implements Disposable {
 					if (tile.getType() == Tile.Type.JUMP_SINGLE) {
 						
 						return CollisionHandler.onBegin(() -> {
-							toy.jump(new Vector2(0, 5f));
+							toy.jump(new Vector2(0, 7f));
 							worldEvents.onJump();
 						});
 					}
 					
 					if (tile.getType() == Tile.Type.JUMP_DOUBLE) {
 						return CollisionHandler.onBegin(() -> {
-							toy.jump(new Vector2(0, 8f));
+							toy.jump(new Vector2(0, 10f));
 							worldEvents.onJump();
 						});
 					}
 					
 					if (tile.getType() == Tile.Type.JUMP_LEFT) {
 						return CollisionHandler.onBegin(() -> {
-							toy.jump(new Vector2(-5f, 8f));
+							toy.jump(new Vector2(-6f, 5f));
 							worldEvents.onJump();
 						});
 					}
 					
 					if (tile.getType() == Tile.Type.JUMP_RIGHT) {
 						return CollisionHandler.onBegin(() -> {
-							toy.jump(new Vector2(5f, 5f));
+							toy.jump(new Vector2(6f, 5f));
 							worldEvents.onJump();
+						});
+					}
+					
+					if (tile.getType() == Tile.Type.KILLER) {
+						return CollisionHandler.onBegin(() -> {
+							killToy(toy);
+							worldEvents.onToyDeath();
 						});
 					}
 				
@@ -104,15 +122,22 @@ public class World implements Disposable {
 		return level;
 	}
 	
+	public Float getTransitionPercent() { return transitionPercent; }
+	public boolean levelNotStartedYet() { return numRescued == 0 && transitionPercent != null && level.hasSpawnRemaining(); }
+	
 	public Collection<Toy> getToys() {
 		return Collections.unmodifiableCollection(toys);
 	}
 	
 	public void killRemainingToys() {
 		for (Toy t : toys) {
-			physics.killBody(t.getBody());
+			killToy(t);
 		}
-		toys.clear();
+		
+		// also need to kill as-yet-unspawned toys
+		for (Spawner spawner : level.getSpawners()) {
+			spawner.configure(0, 0, 0);
+		}
 	}
 	
 	public void confirmDroppableTile(Vector2 position) {
@@ -125,12 +150,16 @@ public class World implements Disposable {
 			Vector2 tilePos = tile.getPosition();
 			level.setTile(tile, (int)tilePos.x, (int)tilePos.y);
 			addTilePhysically(tile);
+			level.getInventory().useItem(droppableTileType);
 		}
 	}
 	
 	public void selectDroppableTile(Tile.Type tileType) {
-		// select the type, deselect if it happens to be the same type
-		this.droppableTileType = this.droppableTileType == tileType ? null : tileType;
+		// check that we have at least 1 of this tile left
+		if (level.getInventory().getNumAvailable(tileType) >= 1) {
+			// select the type, deselect if it happens to be the same type
+			this.droppableTileType = this.droppableTileType == tileType ? null : tileType;
+		}
 	}
 	
 	public Tile.Type getSelectedDroppableTileType() {
@@ -138,6 +167,27 @@ public class World implements Disposable {
 	}
 	
 	public void update(float dt, WorldEvents worldEvents) {
+		// have to fade in before the level starts
+		if (levelNotStartedYet()) {
+			boolean levelTextFinished = preTransitionPausePercent == null;
+			if (levelTextFinished) {
+				transitionPercent = Math.min(1f, transitionPercent - (dt/LEVEL_FADE_IN_DURATION));
+				if (transitionPercent <= 0f) {
+					transitionPercent = null;
+				} else {
+					return;
+				}
+			}
+			else {
+				preTransitionPausePercent = Math.min(1f, preTransitionPausePercent + (dt/LEVEL_PRE_LEVEL_WAIT));
+				if (preTransitionPausePercent >= 1f) {
+					preTransitionPausePercent = null;
+				} else {
+					return;
+				}
+			}
+		}
+		
 		this.worldEvents = worldEvents; // stash this here for the benefit of physics events
 		physics.update(dt);
 		
@@ -145,31 +195,77 @@ public class World implements Disposable {
 		for (Spawner spawner : level.getSpawners()) {
 			if (spawner.isReadyForSpawn(dt)) {
 				Vector2 spawnPos = spawner.getPosition().add(0, 0.5f);
-				Toy toy = new Toy(Toy.Type.BALL, spawnPos, physics);
+				
+				// select a random toy
+				Toy.Type toyType = Toy.Type.values()[ random.nextInt(Toy.Type.values().length) ];
+				
+				Toy toy = new Toy(toyType, spawnPos, physics);
 				toys.add(toy);
+				worldEvents.onToySpawn();
 			}
 		}
 		
 		// update toys
 		for (Toy toy : toys) {
 			toy.update(dt);
+			Vector2 toyPos = toy.getPosition();
+			if (toyPos.x < -5 || toyPos.x > level.getWidth()+5 || toyPos.y < -5) {
+				killToy(toy);
+			}
 		}
+		killDyingToys();
 		
-		if (toys.isEmpty() && numRescued >= level.getNumRescuedNeeded()) {
-			worldEvents.onLevelComplete(level.getNumber());
+		
+		// check if the level won/lost and if so begin a timeout
+		boolean levelFinished = toys.isEmpty() && dyingToys.isEmpty() && !level.hasSpawnRemaining();
+		if (levelFinished) {
+			if (transitionPercent == null) {
+				transitionPercent = 0f;
+			} else {
+				if (transitionPercent >= 1f) {
+					boolean isWon = numRescued >= level.getNumRescuedNeeded();
+					if (isWon) { worldEvents.onLevelComplete(level.getNumber()); }
+					else       { worldEvents.onLevelFailed(level.getNumber());   }
+				}
+				else {
+					transitionPercent = Math.min(1f, transitionPercent + (dt/LEVEL_FADE_OUT_DURATION));
+				}
+			}
 		}
 	}
 	
-	public void beginLevel(Level level) {
+	public void beginLevel(Level level, boolean startImmediately) {
 		clean();
 		this.level = level;
+		if (level == null) { return; }
+		
 		buildPhysicalStageFromLevel();
+		
+		if (startImmediately) {
+			transitionPercent = null;
+			preTransitionPausePercent = null;
+		}
+		else {
+			transitionPercent = 1f;
+			preTransitionPausePercent = 0f;
+		}
 	}
 	
 	private void rescueToy(Toy toy) {
-		toys.remove(toy);
-		physics.killBody(toy.getBody());
+		killToy(toy);
 		++numRescued;
+	}
+	
+	private void killToy(Toy toy) {
+		dyingToys.add(toy);
+	}
+	
+	private void killDyingToys() {
+		for (Toy t : dyingToys) {
+			toys.remove(t);
+			physics.killBody(t.getBody());
+		}
+		dyingToys.clear();
 	}
 	
 	private void buildPhysicalStageFromLevel() {
@@ -196,6 +292,7 @@ public class World implements Disposable {
 			case JUMP_DOUBLE: tileBody = physics.createJumpUpTileBody(t.getPosition(), t); break;
 			case JUMP_LEFT: // fallthrough...
 			case JUMP_RIGHT: tileBody = physics.createCornerJumpTileBody(t.getPosition(), t); break;
+			case KILLER: tileBody = physics.createKillerTileBody(t.getPosition(), t); break;
 		}
 		
 		if (tileBody != null) {
@@ -206,6 +303,8 @@ public class World implements Disposable {
 
 	
 	private void clean() {
+		if (level == null) { return; } // special case, can't do a clean unless there has been a prior level
+		
 		// cleanup any previous physical stage
 		for (Body b : physicalStageBodies) {
 			physics.killBody(b);
@@ -214,6 +313,7 @@ public class World implements Disposable {
 		
 		// cleanup any toys
 		killRemainingToys();
+		killDyingToys();
 		
 		// cleanup other state
 		this.droppableTileType = null;

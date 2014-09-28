@@ -10,7 +10,7 @@ public interface GameState {
 	public void onExit();
 	public InputProcessor getInputProcessor();
 	public GameState update(float dt);
-	public void render();
+	public void render(float dt);
 	
 	public static InputProcessor getNonNullInputProcessor(GameState state) {
 		InputProcessor inputProcessor = state.getInputProcessor();

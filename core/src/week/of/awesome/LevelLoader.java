@@ -44,11 +44,27 @@ public class LevelLoader {
 		for (XmlReader.Element spawnConfig : startTilesSpawnConfigs) {
 			Spawner spawner = level.getSpawners().get(spawnerIdx);
 			
-			int spawnNum = spawnConfig.getInt("amount", spawner.getSpawnNum());
+			float timeToFirstSpawn = spawnConfig.getFloat("firstSpawnDelay", spawner.getTimeToFirstSpawn());
+			int spawnNum = spawnConfig.getInt("amount", spawner.getSpawnAllocation());
 			float spawnFreq = spawnConfig.getFloat("freq", spawner.getSpawnFreq());
 			
-			spawner.configure(spawnNum, spawnFreq);
+			spawner.configure(timeToFirstSpawn, spawnNum, spawnFreq);
 			++spawnerIdx;
+		}
+		
+		// load the inventory
+		XmlReader.Element inventoryXml = xml.getChildByName("inventory");
+		if (inventoryXml != null) {
+			level.getInventory().addItems( Tile.Type.BLOCKER, parseInventoryItem(inventoryXml, "blockers") );
+			level.getInventory().addItems( Tile.Type.JUMP_SINGLE, parseInventoryItem(inventoryXml, "jumpSingle") );
+			level.getInventory().addItems( Tile.Type.JUMP_DOUBLE, parseInventoryItem(inventoryXml, "jumpDouble") );
+			level.getInventory().addItems( Tile.Type.JUMP_LEFT, parseInventoryItem(inventoryXml, "jumpLeft") );
+			level.getInventory().addItems( Tile.Type.JUMP_RIGHT, parseInventoryItem(inventoryXml, "jumpRight") );
+		}
+		
+		// sanity check
+		if (level.getSpawnRemaining() < level.getNumRescuedNeeded()) {
+			throw new RuntimeException("Level is impossible to solve!");
 		}
 		
 		return level;
@@ -86,6 +102,9 @@ public class LevelLoader {
 			}
 			else if (tileToken == '#') { // hashes are solid tiles
 				currentRow.add(new Tile(Tile.Type.GROUND));
+			}
+			else if (tileToken == 'X') { // crosses are killer tiles
+				currentRow.add(new Tile(Tile.Type.KILLER));
 			}
 			else if (tileToken == 'S') { // start cell
 				currentRow.add(new Tile(Tile.Type.START));
@@ -125,6 +144,12 @@ public class LevelLoader {
 		}
 		
 		return tileGrid;
+	}
+	
+	private static int parseInventoryItem(XmlReader.Element inventoryXml, String childElementName) {
+		XmlReader.Element itemXml = inventoryXml.getChildByName(childElementName);
+		if (itemXml == null) { return 0; }
+		return itemXml.getInt("available", 0);
 	}
 	
 	private static FileHandle getLevelFile(String levelFileName) {
