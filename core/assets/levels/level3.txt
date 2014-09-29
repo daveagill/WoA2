@@ -1,25 +1,22 @@
-<level name="Humble Beginnings">
-	<rescue>5</rescue>
+<level name="Mind the gap">
+	<rescue>1</rescue>
 	<map>
-		. . S . . . . . .
-		. . # . # . . . .
-		. . . . . . . # .
-		. . # . . . . . .
-		. . . . . . . . .
-		. . # # # . . . .
-		. . . . . . . . .
-		#J1 . . . . . . .
-		. # F #J1 . . # .
-		# # # # # # # # #
+		# # # # # # # # # #
+		# . . . . . . . . #
+		# . . . . . . . . #
+		# . . . . . . # . #
+		# . . . . . . # . #
+		# S . . . . . # F #
+		# # # # . # # # # #
 	</map>
 	<spawnerConfigs>
-		<spawn amount="5" freq="0.5" />
+		<spawn amount="2" freq="0.5" />
 	</spawnerConfigs>
 	<inventory>
-		<blockers available="5" />
-		<jumpSingle available="5" />
-		<jumpDouble available="5" />
-		<jumpLeft available="5" />
-		<jumpRight available="5" />
+		<blockers available="1" />
+		<jumpSingle available="1" />
+		<jumpDouble available="1" />
+		<jumpLeft available="1" />
+		<jumpRight available="1" />
 	</inventory>
 </level>

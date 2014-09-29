@@ -7,6 +7,8 @@ import week.of.awesome.states.StartScreenState;
 
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.utils.TimeUtils;
@@ -37,6 +39,17 @@ public class Game implements ApplicationListener {
 		inputMultiplexer = new InputMultiplexer();
 		Gdx.input.setInputProcessor(inputMultiplexer);
 		
+		// add escape-button to exit handler
+		inputMultiplexer.addProcessor(new InputAdapter() {
+			@Override
+			public boolean keyDown(int keycode) {
+				if (keycode == Input.Keys.ESCAPE) {
+					Gdx.app.exit();
+				}
+				return false;
+			}
+		});
+		
 		bgMusic = new BackgroundMusic();
 		sounds = new Sounds();
 		renderer = new BasicRenderer(inputMultiplexer);
@@ -47,9 +60,11 @@ public class Game implements ApplicationListener {
 		inGame = new InGameState(renderer, bgMusic, sounds);
 		
 		introScreen.addDialog("The maniacal Dr. Frankenstein has stolen all the world's toys...");
-		introScreen.addDialog("And given them LIFE to use them as slaves in his castle!");
+		introScreen.addDialog("And given them LIFE to use as slaves in his castle!");
 		introScreen.addDialog("Luckily the toys managed to escape from the Dr's clutches...");
 		introScreen.addDialog("Now they find themselves lost and far from home...");
+		introScreen.addDialog("Can you help them find their way?");
+		introScreen.addDialog("Good luck!");
 		
 		gameWonScreen.addDialog("Well I don't believe it...");
 		gameWonScreen.addDialog("You have got ALL the remaining toys to safety!");
@@ -62,11 +77,12 @@ public class Game implements ApplicationListener {
 		startScreen.setBeginPlayingState(introScreen);
 		introScreen.setNextGameState(inGame);
 		inGame.setGameCompletedState(gameWonScreen);
+		inGame.setGameExitState(startScreen);
 		gameWonScreen.setNextGameState(startScreen);
 		
 		currentState = startScreen;
 		currentState.onEnter();
-		inputMultiplexer.addProcessor(GameState.getNonNullInputProcessor(currentState));
+		inputMultiplexer.addProcessor(0, GameState.getNonNullInputProcessor(currentState));
 		
 		lastFrameTime = TimeUtils.nanoTime();
 	}
@@ -90,8 +106,8 @@ public class Game implements ApplicationListener {
 				
 				// swap the input processor for the new state's
 				InputProcessor inputProcessor = GameState.getNonNullInputProcessor(nextState);
-				inputMultiplexer.removeProcessor(inputMultiplexer.getProcessors().size-1);
-				inputMultiplexer.addProcessor(inputProcessor);
+				inputMultiplexer.removeProcessor(0);
+				inputMultiplexer.addProcessor(0, inputProcessor);
 			}
 			currentState = nextState;
 			

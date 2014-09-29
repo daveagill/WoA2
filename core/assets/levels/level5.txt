@@ -1,0 +1,27 @@
+<level name="Difficulty Gradient">
+	<rescue>10</rescue>
+	<map>
+		# # # # # # # # # # # # # # # # #
+		# . . . . . . . . . . . . . . . #
+		#JR . . . . . . F . . . . . . . #
+		# . . . . JL# # # # # . . . . JL#
+		#JR . . . . # . . . #JR . . . . #
+		# # . . . . . . . . . . . . . JL#
+		# # X X # # # # . # # # # . # # #
+		# # # # # . . . . . . . . . . # #
+		# . . . . . . . . . . . . . . . #
+		# . . . . . # # # # # . . . . . #
+		# X . . . . . . S . . . . . . X #
+		# # # # # # # # # # # # # # # # #
+	</map>
+	<spawnerConfigs>
+		<spawn amount="10" freq="1" />
+	</spawnerConfigs>
+	<inventory>
+		<blockers available="5" />
+		<jumpSingle available="5" />
+		<jumpDouble available="5" />
+		<jumpLeft available="5" />
+		<jumpRight available="5" />
+	</inventory>
+</level>

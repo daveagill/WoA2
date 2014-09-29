@@ -3,12 +3,10 @@ package week.of.awesome.states;
 import java.util.Collections;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.BitmapFont.HAlignment;
-import com.badlogic.gdx.graphics.g2d.BitmapFont.TextBounds;
 import com.badlogic.gdx.math.Vector2;
 
 import week.of.awesome.BackgroundMusic;
@@ -93,10 +91,12 @@ public class StartScreenState implements GameState {
 				restartLevelScreen(); // hopefully not necessary!
 			}
 			
+			@Override public void onLevelStart(int levelNum) { }
 			@Override public void onJump() { }
 			@Override public void onRescue() { }
 			@Override public void onToySpawn() { }
 			@Override public void onToyDeath() { }
+			@Override public void onDoorUnlocked() { }
 		});
 		
 		return clickedPlay ? beginPlaying : null;

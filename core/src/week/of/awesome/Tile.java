@@ -14,7 +14,9 @@ public class Tile {
 		JUMP_LEFT,
 		JUMP_RIGHT,
 		BLOCKER,
-		KILLER
+		KILLER,
+		KEY,
+		LOCK
 	}
 	
 	private Type type;
@@ -40,12 +42,12 @@ public class Tile {
 	}
 	
 	public int getWidth() {
-		if (type == Type.START) { return TILE_SIZE * 2; }
+		//if (type == Type.START) { return TILE_SIZE * 2; }
 		return TILE_SIZE;
 	}
 	
 	public int getHeight() {
-		if (type == Type.START) { return TILE_SIZE * 2; }
+		//if (type == Type.START) { return TILE_SIZE * 2; }
 		return TILE_SIZE;
 	}
 	
@@ -54,6 +56,6 @@ public class Tile {
 		int y = (int)position.y;
 		
 		Tile tileBelow = level.getTile(x, y-1);
-		return level.getTile(x, y) == null && tileBelow != null && tileBelow.getType() == Type.GROUND;
+		return level.getTile(x, y) == null && tileBelow != null && (tileBelow.getType() == Type.GROUND || tileBelow.getType() == Type.BLOCKER);
 	}
 }

@@ -1,7 +1,7 @@
 package week.of.awesome;
 
 import java.util.Collection;
-
+import java.util.HashMap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -22,10 +22,20 @@ public class MapRenderer {
 	private int stageMidY;
 	
 	// map tiles
-	private Texture groundTex;
+	private Texture groundTex_walkable_mid;
+	private Texture groundTex_walkable_rightCorner;
+	private Texture groundTex_walkable_rightLedge;
+	private Texture groundTex_walkable_leftCorner;
+	private Texture groundTex_walkable_leftLedge;
+	private Texture groundTex_walkable_leftAndRightCorner;
+	private Texture groundTex_nonWalkable;
+	
 	private Texture startTex;
+	private Texture startClosedTex;
 	private Texture goalTex;
 	private Texture killerTex;
+	private Texture keyTex;
+	private Texture lockTex;
 	
 	// tool tiles
 	private Texture jumpSingleTex;
@@ -35,11 +45,6 @@ public class MapRenderer {
 	private Texture blockerTex;
 	
 	// toys
-	private Texture ballTex;
-	private Texture spinningTopTex;
-	private Texture trainTex;
-	private Texture duckTex;
-	
 	private Animation bearAnim;
 	private Animation ballAnim;
 	private Animation spinningTopAnim;
@@ -52,10 +57,21 @@ public class MapRenderer {
 		this.renderer = renderer;
 		b2dDebug = new Box2DDebugRenderer();
 		
-		this.groundTex = renderer.newTexture("maps/themed/grassy/ground.png");
+
+		this.groundTex_walkable_mid = renderer.newTexture("maps/themed/grassy/ground_walkable_mid.png");
+		this.groundTex_walkable_rightCorner = renderer.newTexture("maps/themed/grassy/ground_walkable_rightCorner.png");
+		this.groundTex_walkable_rightLedge = renderer.newTexture("maps/themed/grassy/ground_walkable_rightLedge.png");
+		this.groundTex_walkable_leftCorner = renderer.newTexture("maps/themed/grassy/ground_walkable_leftCorner.png");
+		this.groundTex_walkable_leftLedge = renderer.newTexture("maps/themed/grassy/ground_walkable_leftLedge.png");
+		this.groundTex_walkable_leftAndRightCorner = renderer.newTexture("maps/themed/grassy/ground_walkable_leftAndRightCorner.png");
+		this.groundTex_nonWalkable = renderer.newTexture("maps/themed/grassy/ground_nonWalkable.png");
+		
 		this.startTex = renderer.newTexture("maps/start.png");
+		this.startClosedTex = renderer.newTexture("maps/startClosed.png");
 		this.goalTex = renderer.newTexture("maps/goal.png");
 		this.killerTex = renderer.newTexture("maps/killer.png");
+		this.lockTex = renderer.newTexture("maps/lock.png");
+		this.keyTex = renderer.newTexture("maps/key.png");
 		
 		this.jumpSingleTex = renderer.newTexture("tools/jumpSingle.png");
 		this.jumpDoubleTex = renderer.newTexture("tools/jumpDouble.png");
@@ -129,7 +145,7 @@ public class MapRenderer {
 				Tile t = level.getTile(x, y);
 				
 				if (t != null) {
-					drawTile(t);
+					drawTile(level, t);
 				}
 			}
 		}
@@ -158,10 +174,50 @@ public class MapRenderer {
 		throw new RuntimeException("No such toy type: " + toy.getType());
 	}
 	
-	private Texture lookupTextureForTile(Tile tile) {
+	private Texture lookupTextureForTile(Level level, Tile tile) {
+		if (tile.getType() == Tile.Type.GROUND) {
+			int x = (int) tile.getPosition().x;
+			int y = (int) tile.getPosition().y;
+			
+			// classify tile type
+			boolean top = isTileAt(level, Tile.Type.GROUND, x, y+1);
+			boolean right = isTileAt(level, Tile.Type.GROUND, x+1, y);
+			boolean bottom = isTileAt(level, Tile.Type.GROUND, x, y-1);
+			boolean left = isTileAt(level, Tile.Type.GROUND, x-1, y);
+			boolean isUnderKiller = isTileAt(level, Tile.Type.KILLER, x, y+1);
+			
+			if (isUnderKiller) {
+				return groundTex_walkable_mid;
+			}
+			
+			if (!top && !right && !left && !bottom) {
+				return groundTex_nonWalkable;
+			}
+			
+			if (!top && right && left) { 
+				return groundTex_walkable_mid;
+			}
+			
+			if (!top && !right && !left) {
+				return groundTex_walkable_leftAndRightCorner;
+			}
+			
+			if (!top && !right) {
+				if (bottom) { return groundTex_walkable_rightCorner; }
+				else        { return groundTex_walkable_rightLedge;  }
+			}
+
+			if (!top && !left) {
+				if (bottom) { return groundTex_walkable_leftCorner; }
+				else        { return groundTex_walkable_leftLedge;  }
+			}
+			
+			return groundTex_nonWalkable;
+		}
+		
 		switch (tile.getType()) {
-			case GROUND:      return groundTex;
-			case START:       return startTex;
+			case GROUND:      throw new RuntimeException("Ground tiles should be handled already!");
+			case START:       return level.getSpawnRemaining() == 0 ? startClosedTex : startTex;
 			case GOAL:        return goalTex;
 			case JUMP_SINGLE: return jumpSingleTex;
 			case JUMP_DOUBLE: return jumpDoubleTex;
@@ -169,19 +225,26 @@ public class MapRenderer {
 			case JUMP_RIGHT:  return jumpRightTex;
 			case BLOCKER:     return blockerTex;
 			case KILLER:      return killerTex;
+			case LOCK:        return lockTex;
+			case KEY:         return keyTex;
 		}
 	
 		throw new RuntimeException("No such tile type: " + tile.getType());
 	}
 	
-	public void drawTile(Tile tile) {
+	public void drawTile(Level level, Tile tile) {
 		Vector2 pos = tile.getPosition();
-		drawTile(tile, new Vector2((int)pos.x, (int)pos.y), 1f);
+		drawTile(level, tile, new Vector2((int)pos.x, (int)pos.y), 1f);
 	}
 	
-	public void drawTile(Tile tile, Vector2 position, float scale) {
-		Texture texture = lookupTextureForTile(tile);
+	public void drawTile(Level level, Tile tile, Vector2 position, float scale) {
+		Texture texture = lookupTextureForTile(level, tile);
 		renderer.drawCentered(texture, position, tile.getWidth() * scale, tile.getHeight() * scale);
 	}
 	
+	private boolean isTileAt(Level level, Tile.Type type, int x, int y) {
+		Tile t = level.getTile(x, y);
+		if (t == null) { return false; }
+		return t.getType() == type;
+	}
 }

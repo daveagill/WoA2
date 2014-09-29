@@ -1,0 +1,28 @@
+<level name="Sacrifice">
+	<rescue>10</rescue>
+	<map>
+		# # # # # # # # # # # # # # # # #
+		# S . . . . . . . . . . X . . S #
+		# # . # . . . . . . . . # . # # #
+		# . . . .JR . . . . . . # . # . .
+		# . # # # # . X X . . X # . # . .
+		# # # . . X . # # . . # # . # . F
+		# . . . K # . . . . . . # . # . #
+		# . . . # # . . . . . . # . # . #
+		# . . . . . . . . . . . . . # . #
+		. . # . J1. JR. . . . # . L # . #
+		X . . . # . # . . . . . . . . . #
+		# # # # # # # # # # # # . # # # #
+	</map>
+	<spawnerConfigs>
+		<spawn amount="3" freq="2" />
+		<spawn amount="40" freq="0.5" />
+	</spawnerConfigs>
+	<inventory>
+		<blockers available="2" />
+		<jumpSingle available="1" />
+		<jumpDouble available="2" />
+		<jumpLeft available="2" />
+		<jumpRight available="0" />
+	</inventory>
+</level>

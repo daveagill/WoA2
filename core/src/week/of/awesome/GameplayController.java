@@ -1,8 +1,6 @@
 package week.of.awesome;
 
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.Contact;
-import com.badlogic.gdx.physics.box2d.WorldManifold;
 
 public class GameplayController implements WorldEvents {
 	
@@ -12,6 +10,8 @@ public class GameplayController implements WorldEvents {
 	private GameplayRenderer renderer;
 	private BackgroundMusic bgMusic;
 	private Sounds sounds;
+	
+	private boolean enableClicking;
 	
 	public GameplayController(GameplayRenderer renderer, BackgroundMusic bgMusic, Sounds sounds) {
 		this.renderer = renderer;
@@ -23,6 +23,11 @@ public class GameplayController implements WorldEvents {
 		this.world = world;
 		bgMusic.playForLevel(START_LEVEL);
 		beginLevel(START_LEVEL, false);
+	}
+	
+	@Override
+	public void onLevelStart(int levelNum) {
+		enableClicking = true;
 	}
 	
 	@Override
@@ -60,7 +65,14 @@ public class GameplayController implements WorldEvents {
 		sounds.playDie();
 	}
 	
+	@Override
+	public void onDoorUnlocked() {
+		sounds.playPickupKey();
+	}
+	
 	public void mouseUp() {
+		if (!enableClicking) { return; }
+		
 		Vector2 levelSpacePos = renderer.getLevelSpaceMousePositionOrNull(world.getLevel());
 		boolean isWithinLevel = levelSpacePos != null;
 		
@@ -76,11 +88,16 @@ public class GameplayController implements WorldEvents {
 		}
 	}
 	
+	public void skipLevel() {
+		beginLevel(world.getLevel().getNumber()+1, false);
+	}
+	
 	private boolean beginLevel(int levelNum, boolean beginImmediately) {
 		if (LevelLoader.hasLevel(levelNum)) {
 			// create the next level
 			Level level = LevelLoader.getLevel(levelNum);
 			world.beginLevel(level, beginImmediately);
+			enableClicking = false;
 			return true;
 		}
 		return false;

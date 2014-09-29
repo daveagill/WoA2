@@ -1,0 +1,23 @@
+<level name="Resource Hungry">
+	<rescue>5</rescue>
+	<map>
+		X . . . . . . . . . X . . . . . .
+		# . . . . # . . . . # . . . . . .
+		# S . . . . . . . . . . . . . . .
+		# # # . # # . . . . . . . . . . .
+		# . . . # . . . X . J1. . F . . .
+		# . . . # . # # # # # . . # . . .
+		# X . . # . . . . F . . . . . . .
+		# # . # # # # . # # . # # # # # #
+	</map>
+	<spawnerConfigs>
+		<spawn amount="10" freq="0.5" firstSpawnDelay="3" />
+	</spawnerConfigs>
+	<inventory>
+		<blockers available="4" />
+		<jumpSingle available="1" />
+		<jumpDouble available="1" />
+		<jumpLeft available="0" />
+		<jumpRight available="0" />
+	</inventory>
+</level>

@@ -1,0 +1,22 @@
+<level name="Cross the Gap">
+	<rescue>5</rescue>
+	<map>
+		# S . . . . . . . . . . . . . . F
+		# . . . . . . . . . . . . . . # #
+		# # # . . . . . . . . . . . . # .
+		# # . . . . . . . . . . . . . # .
+		# # . . . . . . . . . . . . . # .
+		# # . . . . . . . . . . . . . # X
+		# # # # # # . . # # # # # # # # #
+	</map>
+	<spawnerConfigs>
+		<spawn amount="5" freq="0.5" />
+	</spawnerConfigs>
+	<inventory>
+		<blockers available="21" />
+		<jumpSingle available="4" />
+		<jumpDouble available="0" />
+		<jumpLeft available="0" />
+		<jumpRight available="0" />
+	</inventory>
+</level>

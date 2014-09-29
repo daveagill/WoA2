@@ -1,27 +1,22 @@
-<level name="Humble Beginnings">
+<level name="A step up">
 	<rescue>5</rescue>
 	<map>
-		# # # # # # # # # # # # # # # # #
-		# . . . . . . . . . . . . . . . #
-		# . . . . . . . F . . . . . . . #
-		#JR . . . . # # # # # . . . . JL#
-		# . . . . JL# . . . #JR . . . . #
-		#JR . . . . . . . . . . . . . JL#
-		# # # . # # # # . # # # # . # # #
-		# # # . . . . . . . . . . . # # #
-		# . . . . . . . . . . . . . . . #
-		# . . . . . # # # # # . . . . . #
-		# X # S . . . . . . . . . . # X #
-		# # # # # # # # # # # # # # # # #
+		# # # # # # # # # #
+		# . . . . . . . . #
+		# . . . . . . . F #
+		# . . . . . . # # #
+		# . . . . . . # # #
+		# S . . . # # # # #
+		# # # # # # # # # #
 	</map>
 	<spawnerConfigs>
 		<spawn amount="5" freq="0.5" />
 	</spawnerConfigs>
 	<inventory>
-		<blockers available="5" />
-		<jumpSingle available="5" />
-		<jumpDouble available="5" />
-		<jumpLeft available="5" />
-		<jumpRight available="5" />
+		<blockers available="0" />
+		<jumpSingle available="2" />
+		<jumpDouble available="0" />
+		<jumpLeft available="0" />
+		<jumpRight available="0" />
 	</inventory>
 </level>

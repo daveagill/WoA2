@@ -2,7 +2,6 @@ package week.of.awesome.states;
 
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.InputProcessor;
-import com.badlogic.gdx.utils.Disposable;
 
 public interface GameState {
 

@@ -3,6 +3,7 @@ package week.of.awesome;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 
 import com.badlogic.gdx.math.Vector2;
@@ -20,8 +21,9 @@ public class World implements Disposable {
 	private Physics physics;
 	private WorldEvents worldEvents;
 	
+	private boolean levelStartedSignalled = false;
 	private Level level;
-	private Collection<Body> physicalStageBodies = new ArrayList<Body>();
+	private List<Body> physicalStageBodies = new ArrayList<Body>();
 	
 	private Tile.Type droppableTileType = null;
 	
@@ -45,7 +47,9 @@ public class World implements Disposable {
 					Tile tile = (Tile)a;
 					Toy toy = (Toy)b;
 					
-					if (tile.getType() == Tile.Type.GROUND) {
+					if (tile.getType() == Tile.Type.GROUND ||
+					    tile.getType() == Tile.Type.BLOCKER ||
+					    tile.getType() == Tile.Type.LOCK) {
 						boolean vertical = contact.getWorldManifold().getNormal().y > 0.5f;
 						boolean falling = toy.getBody().getLinearVelocity().y < 0;
 						if (vertical && falling) {
@@ -99,6 +103,18 @@ public class World implements Disposable {
 						});
 					}
 				
+					if (tile.getType() == Tile.Type.KEY) {
+
+						// remove the bodies
+						removeTilePhysically(tile);
+						for (Tile lock : level.getLockTiles()) {
+							removeTilePhysically(lock);
+						}
+						
+						level.setTile(null, (int)tile.getPosition().x, (int)tile.getPosition().y);
+						level.removeLockTiles();
+						worldEvents.onDoorUnlocked();
+					}
 				}
 				
 				return null;
@@ -151,6 +167,9 @@ public class World implements Disposable {
 			level.setTile(tile, (int)tilePos.x, (int)tilePos.y);
 			addTilePhysically(tile);
 			level.getInventory().useItem(droppableTileType);
+			
+			// deselect the tile
+			this.droppableTileType = null;
 		}
 	}
 	
@@ -188,13 +207,18 @@ public class World implements Disposable {
 			}
 		}
 		
+		if (!levelStartedSignalled) {
+			levelStartedSignalled = true;
+			worldEvents.onLevelStart(level.getNumber());
+		}
+		
 		this.worldEvents = worldEvents; // stash this here for the benefit of physics events
 		physics.update(dt);
 		
 		// spawn new toys
 		for (Spawner spawner : level.getSpawners()) {
 			if (spawner.isReadyForSpawn(dt)) {
-				Vector2 spawnPos = spawner.getPosition().add(0, 0.5f);
+				Vector2 spawnPos = spawner.getPosition();
 				
 				// select a random toy
 				Toy.Type toyType = Toy.Type.values()[ random.nextInt(Toy.Type.values().length) ];
@@ -211,6 +235,7 @@ public class World implements Disposable {
 			Vector2 toyPos = toy.getPosition();
 			if (toyPos.x < -5 || toyPos.x > level.getWidth()+5 || toyPos.y < -5) {
 				killToy(toy);
+				worldEvents.onToyDeath();
 			}
 		}
 		killDyingToys();
@@ -237,6 +262,7 @@ public class World implements Disposable {
 	public void beginLevel(Level level, boolean startImmediately) {
 		clean();
 		this.level = level;
+		this.levelStartedSignalled = false;
 		if (level == null) { return; }
 		
 		buildPhysicalStageFromLevel();
@@ -289,15 +315,28 @@ public class World implements Disposable {
 			case START: break; // do nothing
 			case GOAL: tileBody = physics.createGoalTileBody(t.getPosition()); break;
 			case JUMP_SINGLE: // fallthrough...
-			case JUMP_DOUBLE: tileBody = physics.createJumpUpTileBody(t.getPosition(), t); break;
+			case JUMP_DOUBLE: tileBody = physics.createJumpUpTileBody(t.getPosition()); break;
 			case JUMP_LEFT: // fallthrough...
-			case JUMP_RIGHT: tileBody = physics.createCornerJumpTileBody(t.getPosition(), t); break;
-			case KILLER: tileBody = physics.createKillerTileBody(t.getPosition(), t); break;
+			case JUMP_RIGHT: tileBody = physics.createCornerJumpTileBody(t.getPosition(), t.getType()); break;
+			case KILLER: tileBody = physics.createKillerTileBody(t.getPosition()); break;
+			case KEY: tileBody = physics.createKeyTileBody(t.getPosition()); break;
+			case LOCK: tileBody = physics.createLockTileBody(t.getPosition()); break;
 		}
 		
 		if (tileBody != null) {
 			tileBody.setUserData(t);
 			physicalStageBodies.add(tileBody);
+		}
+	}
+	
+	private void removeTilePhysically(Tile t) {
+		for (int i = 0; i < physicalStageBodies.size(); ++i) {
+			Body b = physicalStageBodies.get(i);
+			if (b.getUserData() == t) {
+				physicalStageBodies.remove(i);
+				physics.killBody(b);
+				return;
+			}
 		}
 	}
 

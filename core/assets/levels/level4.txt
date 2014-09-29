@@ -1,0 +1,23 @@
+<level name="Hazards can be hazardous">
+	<rescue>10</rescue>
+	<map>
+		X . . . . X X X X X X X X .
+		# . . . X # # # # # # # # X
+		# . . F # . S . . . . . . #
+		# . . # # # # # # # . . . #
+		# . . . . . . . . . . . . #
+		# . . . . . . . . . . . . #
+		# # # X X # . X . X X # X #
+		# # # # # # . # # # # # # #
+	</map>
+	<spawnerConfigs>
+		<spawn amount="10" freq="0.5" />
+	</spawnerConfigs>
+	<inventory>
+		<blockers available="5" />
+		<jumpSingle available="5" />
+		<jumpDouble available="5" />
+		<jumpLeft available="5" />
+		<jumpRight available="5" />
+	</inventory>
+</level>

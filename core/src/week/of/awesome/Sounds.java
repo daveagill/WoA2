@@ -15,12 +15,14 @@ public class Sounds implements Disposable {
 	private Sound spawn;
 	private Sound die;
 	private Sound rescue;
+	private Sound pickupKey;
 	
 	public Sounds() {
-		this.jump = newSound("jump.wav");
-		this.spawn = newSound("spawn.wav");
-		this.die = newSound("die.wav");
+		this.jump = newSound("Jump.wav");
+		this.spawn = newSound("Spawn.wav");
+		this.die = newSound("Die.wav");
 		this.rescue = newSound("Rescue.wav");
+		this.pickupKey = newSound("PickupKey.wav");
 	}
 	
 	public void playJump() {
@@ -37,6 +39,10 @@ public class Sounds implements Disposable {
 	
 	public void playRescued() {
 		rescue.play();
+	}
+	
+	public void playPickupKey() {
+		pickupKey.play();
 	}
 	
 	private Sound newSound(String filename) {

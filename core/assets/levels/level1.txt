@@ -1,18 +1,20 @@
-<level name="Test">
-	<rescue>1</rescue>
+<level name="Humble Beginnings">
+	<rescue>3</rescue>
 	<map>
-		. . S . . . . . #
-		. . # # # . . . #
-		. . . . . . . . #
-		. . . . . . . . #
-		. . . . . . . . #
-		. . . . . . . . #
-		. . . . . . . . #
-		#J1 . . . . . . #
-		. # F . J1. J1# #
+		# # # # # # # # #
+		# . . . . . . . #
+		# . . . . . F . #
+		# S . . . # # # #
 		# # # # # # # # #
 	</map>
 	<spawnerConfigs>
-		<spawn amount="1" freq="0.5" />
+		<spawn amount="3" freq="0.5" />
 	</spawnerConfigs>
+	<inventory>
+		<blockers available="0" />
+		<jumpSingle available="1" />
+		<jumpDouble available="0" />
+		<jumpLeft available="0" />
+		<jumpRight available="0" />
+	</inventory>
 </level>

@@ -11,7 +11,7 @@ import com.badlogic.gdx.utils.Disposable;
 
 public class BackgroundMusic implements Disposable {
 	
-	private static final float MAX_VOLUME = 0f;
+	private static final float MAX_VOLUME = 1f;
 	private static final float FADE_DURATION = 1f;
 
 	private Audio audio;

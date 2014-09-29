@@ -133,6 +133,12 @@ public class LevelLoader {
 					throw new RuntimeException("Illegal jump type token: " + jumpTypeToken);
 				}
 			}
+			else if (tileToken == 'K') {
+				currentRow.add(new Tile(Tile.Type.KEY));
+			}
+			else if (tileToken == 'L') {
+				currentRow.add(new Tile(Tile.Type.LOCK));
+			}
 			else {
 				throw new RuntimeException("Illegal tile token: " + tileToken);
 			}

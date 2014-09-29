@@ -11,7 +11,7 @@ public class DesktopLauncher {
 	public static void main (String[] arg) {
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
 		config.title = "Save My Toys!";
-		config.width = GameplayRenderer.WORLD_TO_UI_RATIO * 17;
+		config.width = GameplayRenderer.WORLD_TO_UI_RATIO * 18 + 50;
 		config.height = GameplayRenderer.WORLD_TO_UI_RATIO * 15;
 		config.resizable = false;
 		

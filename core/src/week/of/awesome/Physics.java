@@ -1,5 +1,7 @@
 package week.of.awesome;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.logging.Logger;
 
 import com.badlogic.gdx.math.Vector2;
@@ -13,6 +15,8 @@ import com.badlogic.gdx.utils.Disposable;
 public class Physics implements Disposable {
 	private com.badlogic.gdx.physics.box2d.World b2dSim = new com.badlogic.gdx.physics.box2d.World(new Vector2(0, -10), true);
 	private CollisionEventDispatcher collisionListener;
+	
+	private Collection<Body> deadBodies = new ArrayList<Body>();
 	
 	public Physics(CollisionHandlerFactory collisionHandlerFactory) {
 		collisionListener = new CollisionEventDispatcher(collisionHandlerFactory);
@@ -69,13 +73,12 @@ public class Physics implements Disposable {
 		return body;
 	}
 	
-	public Body createKillerTileBody(Vector2 position, Tile tile) {
+	public Body createKillerTileBody(Vector2 position) {
 		BodyDef bodyDef = new BodyDef();
 		bodyDef.type = BodyDef.BodyType.StaticBody;
 		bodyDef.position.set(position);
 		
 		Body body = b2dSim.createBody(bodyDef);
-		body.setUserData(tile);
 		
 		float heightScale = 10f;
 		PolygonShape box = new PolygonShape();
@@ -109,17 +112,16 @@ public class Physics implements Disposable {
 		return body;
 	}
 	
-	public Body createJumpUpTileBody(Vector2 position, Tile tile) {
+	public Body createJumpUpTileBody(Vector2 position) {
 		BodyDef bodyDef = new BodyDef();
 		bodyDef.type = BodyDef.BodyType.StaticBody;
 		bodyDef.position.set(position);
 		
 		Body body = b2dSim.createBody(bodyDef);
-		body.setUserData(tile);
 		
 		float heightScale = 10f;
 		PolygonShape box = new PolygonShape();
-		box.setAsBox(Tile.TILE_SIZE/3f, Tile.TILE_SIZE/heightScale, new Vector2(0, -Tile.TILE_SIZE/2f + Tile.TILE_SIZE/heightScale), 0);
+		box.setAsBox(Tile.TILE_SIZE/4f, Tile.TILE_SIZE/heightScale, new Vector2(0, -Tile.TILE_SIZE/2f + Tile.TILE_SIZE/heightScale), 0);
 		
 		FixtureDef fixtureDef = new FixtureDef();
 		fixtureDef.shape = box;
@@ -130,17 +132,16 @@ public class Physics implements Disposable {
 		return body;
 	}
 	
-	public Body createCornerJumpTileBody(Vector2 position, Tile tile) {
+	public Body createCornerJumpTileBody(Vector2 position, Tile.Type type) {
 		BodyDef bodyDef = new BodyDef();
 		bodyDef.type = BodyDef.BodyType.StaticBody;
 		bodyDef.position.set(position);
 		
 		Body body = b2dSim.createBody(bodyDef);
-		body.setUserData(tile);
 		
 		float expand = Tile.TILE_SIZE/2f * 0.5f;
 		PolygonShape triangle = new PolygonShape();
-		if (tile.getType() == Tile.Type.JUMP_LEFT) {
+		if (type == Tile.Type.JUMP_LEFT) {
 			triangle.set(new Vector2[] {
 					new Vector2(Tile.TILE_SIZE/2f, -Tile.TILE_SIZE/2f),
 					new Vector2(Tile.TILE_SIZE/2f, expand),
@@ -165,7 +166,48 @@ public class Physics implements Disposable {
 		return body;
 	}
 	
+	public Body createKeyTileBody(Vector2 position) {
+		BodyDef bodyDef = new BodyDef();
+		bodyDef.type = BodyDef.BodyType.StaticBody;
+		bodyDef.position.set(position);
+		
+		Body body = b2dSim.createBody(bodyDef);
+		
+		PolygonShape box = new PolygonShape();
+		box.setAsBox(Tile.TILE_SIZE/2f, Tile.TILE_SIZE/2f);
+		
+		FixtureDef fixtureDef = new FixtureDef();
+		fixtureDef.shape = box;
+		fixtureDef.isSensor = true;
+		
+		body.createFixture(fixtureDef);
+		
+		return body;
+	}
+	
+	public Body createLockTileBody(Vector2 position) {
+		BodyDef bodyDef = new BodyDef();
+		bodyDef.type = BodyDef.BodyType.StaticBody;
+		bodyDef.position.set(position);
+		
+		Body body = b2dSim.createBody(bodyDef);
+		
+		PolygonShape box = new PolygonShape();
+		box.setAsBox(Tile.TILE_SIZE/2f, Tile.TILE_SIZE/2f);
+		
+		FixtureDef fixtureDef = new FixtureDef();
+		fixtureDef.shape = box;
+		fixtureDef.friction = 0;
+		fixtureDef.restitution = 1;
+		
+		body.createFixture(fixtureDef);
+		
+		return body;
+	}
+	
 	public void update(float dt) {
+		processDeadBodies();
+		
 		b2dSim.step(dt, 8, 3);
 		if (collisionListener != null) {
 			collisionListener.dispatchCollisionEvents();
@@ -173,14 +215,22 @@ public class Physics implements Disposable {
 	}
 	
 	public void killBody(Body body) {
-		b2dSim.destroyBody(body);
+		deadBodies.add(body);
 	}
 	
 	@Override
 	public void dispose() {
+		processDeadBodies();
 		if (b2dSim.getBodyCount() > 0) {
 			Logger.getGlobal().warning(b2dSim.getBodyCount() + " bodies were not correctly released by disposing the b2d world.");
 		}
 		b2dSim.dispose();
+	}
+	
+	private void processDeadBodies() {
+		for (Body dead : deadBodies) {
+			b2dSim.destroyBody(dead);
+		}
+		deadBodies.clear();
 	}
 }

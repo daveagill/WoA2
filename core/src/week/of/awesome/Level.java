@@ -10,6 +10,7 @@ public class Level {
 	private List<Tile> tiles;
 	private List<Spawner> spawners = new ArrayList<Spawner>();
 	private Collection<Tile> goalTiles = new ArrayList<Tile>();
+	private Collection<Tile> lockTiles = new ArrayList<Tile>();
 	private Inventory inventory = new Inventory();
 	private String name;
 	private int number;
@@ -59,11 +60,14 @@ public class Level {
 		
 		tile.setPosition(new Vector2(x, y));
 		
-		if (tile.getType().equals(Tile.Type.START)) {
+		if (tile.getType() == Tile.Type.START) {
 			spawners.add(new Spawner(tile));
 		}
-		else if (tile.getType().equals(Tile.Type.GOAL)) {
+		else if (tile.getType() == Tile.Type.GOAL) {
 			goalTiles.add(tile);
+		}
+		else if (tile.getType() == Tile.Type.LOCK) {
+			lockTiles.add(tile);
 		}
 	}
 	
@@ -78,6 +82,17 @@ public class Level {
 	
 	public Collection<Tile> getGoalTiles() {
 		return goalTiles;
+	}
+	
+	public Collection<Tile> getLockTiles() {
+		return lockTiles;
+	}
+	
+	public void removeLockTiles() {
+		for (Tile lock : lockTiles) {
+			setTile(null, (int)lock.getPosition().x, (int)lock.getPosition().y);
+		}
+		lockTiles.clear();
 	}
 	
 	public boolean hasSpawnRemaining() {

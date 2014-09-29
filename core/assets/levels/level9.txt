@@ -1,0 +1,22 @@
+<level name="Back and Forth">
+	<rescue>10</rescue>
+	<map>
+		. S . . . . . . . . . . . . # #
+		. . . . . . . . . . . . . # . #
+		. . . . . . . . . . . . # . . #
+		# # # # # # . . . . . # . . . #
+		# . . . . . . . . . # . . . . #
+		# K . . X . . . . . L . . . F #
+		# # # # # # # # # # # # # # # #
+	</map>
+	<spawnerConfigs>
+		<spawn amount="10" freq="1" />
+	</spawnerConfigs>
+	<inventory>
+		<blockers available="3" />
+		<jumpSingle available="3" />
+		<jumpDouble available="3" />
+		<jumpLeft available="3" />
+		<jumpRight available="3" />
+	</inventory>
+</level>

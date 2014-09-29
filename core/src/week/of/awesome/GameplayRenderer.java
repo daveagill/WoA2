@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Files.FileType;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.BitmapFont.HAlignment;
+import com.badlogic.gdx.graphics.g2d.BitmapFont.TextBounds;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 
@@ -19,6 +19,8 @@ public class GameplayRenderer {
 	private static final int TILE_UI_SIZE = Tile.TILE_SIZE * WORLD_TO_UI_RATIO;
 	private static final int PALETTE_TILE_MARGIN = 10;
 	private static final int PALETTE_FONT_VERTICAL_ALLOWANCE = 16;
+	
+	private static final int LEVEL_NAME_WRAP_PADDING = 20;
 	
 	private BasicRenderer renderer;
 	private MapRenderer mapRenderer;
@@ -54,6 +56,7 @@ public class GameplayRenderer {
 	
 	// UI
 	private Texture killAllButtonTex;
+	private Texture killAllButtonHoverTex;
 	private Texture killAllButtonPressedTex;
 	
 	
@@ -72,6 +75,7 @@ public class GameplayRenderer {
 		this.paletteHighlightBackgroundTex = renderer.newRepeatingTexture("UI/paletteHighlightBackground.png");
 		
 		this.killAllButtonTex = renderer.newTexture("UI/killAll.png");
+		this.killAllButtonHoverTex = renderer.newTexture("UI/killAll_hover.png");
 		this.killAllButtonPressedTex = renderer.newTexture("UI/killAll_down.png");
 		
 		this.screenWidth = Gdx.graphics.getWidth();
@@ -154,7 +158,7 @@ public class GameplayRenderer {
 		toolPalette.add(new Tile(Tile.Type.JUMP_RIGHT));
 		
 		int stepX = TILE_UI_SIZE + 10;
-		int leftX = screenWidth/2 - bottomUiWidth/2 + TILE_UI_SIZE/2;
+		int leftX = screenWidth/2 - bottomUiWidth/2 + TILE_UI_SIZE/2 + 50;
 		int bottomY = BOTTOM_UI_PANE_HEIGHT/2 + PALETTE_FONT_VERTICAL_ALLOWANCE/2;
 		
 		for (int i = 0; i < toolPalette.size(); ++i) {
@@ -191,12 +195,12 @@ public class GameplayRenderer {
 			
 			if (isTileDroppable) {
 				mapRenderer.useLevelTransform(level);
-				mapRenderer.drawTile(tile);
+				mapRenderer.drawTile(null, tile);
 				useUITransform();
 			}
 			else {
 				renderer.getBatch().setColor(1f, 1f, 1f, 0.7f);
-				mapRenderer.drawTile(tile, renderer.getMousePos(), WORLD_TO_UI_RATIO);
+				mapRenderer.drawTile(null, tile, renderer.getMousePos(), WORLD_TO_UI_RATIO);
 				renderer.getBatch().setColor(1f, 1f, 1f, 1f);
 			}
 		}
@@ -220,18 +224,31 @@ public class GameplayRenderer {
 			Vector2 tilePos = t.getPosition();
 			final int highlightPadding = PALETTE_TILE_MARGIN/2;
 			
-			if (t.getType() == selectionType || selectedTileType != null && t.getType() == selectedTileType) {
-				int highlightLeftX = (int) (tilePos.x - tileScreenWidth/2 - highlightPadding);
-				int highlightLeftY = (int) (tilePos.y - tileScreenHeight/2 - highlightPadding);
-				int highlightWidth = tileScreenWidth + highlightPadding*2;
-				int highlightHeight = tileScreenHeight + highlightPadding*2;
-				renderer.drawRepeating(paletteHighlightBackgroundTex, highlightLeftX, highlightLeftY, highlightWidth, highlightHeight);
-			}
-			mapRenderer.drawTile(t, tilePos, WORLD_TO_UI_RATIO);
+			boolean hasAnyAvailable = inventory.getNumAvailable(t.getType()) > 0;
 			
-			String text = "x" + inventory.getNumAvailable(t.getType());
-			float fontY = tilePos.y - tileScreenHeight/2 - PALETTE_FONT_VERTICAL_ALLOWANCE/2;
-			inventoryFont.drawMultiLine(renderer.getBatch(), text, tilePos.x, fontY, 0, HAlignment.CENTER);
+			if (hasAnyAvailable) {
+				String text = "x" + inventory.getNumAvailable(t.getType());
+				float fontY = tilePos.y - tileScreenHeight/2 - PALETTE_FONT_VERTICAL_ALLOWANCE/2;
+				inventoryFont.drawMultiLine(renderer.getBatch(), text, tilePos.x, fontY, 0, HAlignment.CENTER);
+				
+
+				if (t.getType() == selectionType || selectedTileType != null && t.getType() == selectedTileType) {
+					int highlightLeftX = (int) (tilePos.x - tileScreenWidth/2 - highlightPadding);
+					int highlightLeftY = (int) (tilePos.y - tileScreenHeight/2 - highlightPadding);
+					int highlightWidth = tileScreenWidth + highlightPadding*2;
+					int highlightHeight = tileScreenHeight + highlightPadding*2;
+					renderer.drawRepeating(paletteHighlightBackgroundTex, highlightLeftX, highlightLeftY, highlightWidth, highlightHeight);
+				}
+			}
+			else {
+				renderer.getBatch().setColor(1f, 1f, 1f, 0.3f);
+			}
+			
+			mapRenderer.drawTile(null, t, tilePos, WORLD_TO_UI_RATIO);
+			
+			if (!hasAnyAvailable) { // need to undo the transparency
+				renderer.getBatch().setColor(1f, 1f, 1f, 1f);
+			}
 		}
 	}
 	
@@ -246,9 +263,17 @@ public class GameplayRenderer {
 		drawToolPalette(world.getSelectedDroppableTileType(), world.getLevel().getInventory());
 		
 		// draw kill all button
+		boolean isHover = this.isMouseWithinKillAllButton();
 		Vector2 killButtonCenter = new Vector2(uiKillButtonBounds.x + killAllButtonTex.getWidth()/2, uiKillButtonBounds.y + killAllButtonTex.getHeight()/2);
-		Texture killButtonTex = this.isMouseWithinKillAllButton() && renderer.isMousePressed() ? this.killAllButtonPressedTex : this.killAllButtonTex;
-		renderer.drawCentered(killButtonTex, killButtonCenter, killAllButtonTex.getWidth(), killAllButtonTex.getHeight());
+		Texture killButtonTex = isHover ? renderer.isMousePressed() ? this.killAllButtonPressedTex : this.killAllButtonHoverTex : this.killAllButtonTex;
+		renderer.drawCentered(killButtonTex, killButtonCenter, killButtonTex.getWidth(), killButtonTex.getHeight());
+		
+		if (isHover) {
+			float killAllLabelYOffset = 5;
+			float killAllLabelX = killButtonCenter.x + killAllButtonTex.getHeight()/2 + killAllLabelYOffset;
+			float killAllLabelY = killButtonCenter.y + inventoryFont.getLineHeight();
+			inventoryFont.drawMultiLine(renderer.getBatch(), "Kill\nToys?", killAllLabelX, killAllLabelY, 0, HAlignment.LEFT);
+		}
 		
 		// draw the stats
 		String numRescued = world.getNumRescued() + " Rescued";
@@ -260,6 +285,8 @@ public class GameplayRenderer {
 	}
 	
 	public void drawWorld(World world, float dt) {
+		Gdx.graphics.setTitle("Level " + world.getLevel().getNumber() + " \"" + world.getLevel().getName() + "\"");
+		
 		renderer.drawRepeating(outOfBoundsBackgroundTex, 0, BOTTOM_UI_PANE_HEIGHT, screenWidth, screenHeight);
 		Rectangle bounds = mapRenderer.getLevelBounds(world.getLevel());
 			
@@ -287,8 +314,13 @@ public class GameplayRenderer {
 				// write level name
 				levelNameFont.setColor(1f, 1f, 1f, world.getTransitionPercent());
 				String text = "Level " + world.getLevel().getNumber() + "\n\"" + world.getLevel().getName() + "\"";
-				int fontY = (int) (screenHeight/2f + levelNameFont.getLineHeight());
-				levelNameFont.drawMultiLine(renderer.getBatch(), text, screenWidth/2f, fontY, 0f, HAlignment.CENTER);
+				
+				int textWrapWidth = Gdx.graphics.getWidth() - LEVEL_NAME_WRAP_PADDING*2;
+				TextBounds levelNameBounds = levelNameFont.getWrappedBounds(text, textWrapWidth);
+				int fontX = (int) (screenWidth/2f - textWrapWidth/2f);
+				int fontY = (int) (screenHeight/2f + levelNameBounds.height/2f);
+				//levelNameFont.drawMultiLine(renderer.getBatch(), text, screenWidth/2f, fontY, 0f, HAlignment.CENTER);
+				levelNameFont.drawWrapped(renderer.getBatch(), text, fontX, fontY, textWrapWidth, HAlignment.CENTER);
 				levelNameFont.setColor(1f, 1f, 1f, 1f);
 			}
 		}

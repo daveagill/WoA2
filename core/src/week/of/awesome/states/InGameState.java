@@ -1,7 +1,8 @@
 package week.of.awesome.states;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
-import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.InputProcessor;
 
 import week.of.awesome.BackgroundMusic;
@@ -18,6 +19,9 @@ public class InGameState implements GameState {
 	private GameplayController controller;
 	
 	private GameState gameCompletedState;
+	private GameState gameExitState;
+	
+	private boolean userWantsToQuit;
 	
 	public InGameState(BasicRenderer basicRenderer, BackgroundMusic bgMusic, Sounds sounds) {
 		renderer = new GameplayRenderer(basicRenderer);
@@ -28,14 +32,20 @@ public class InGameState implements GameState {
 		this.gameCompletedState = gameCompleted;
 	}
 	
+	public void setGameExitState(GameState gameExit) {
+		this.gameExitState = gameExit;
+	}
+	
 	@Override
 	public void onEnter() {
 		world = new World();
 		controller.startGame(world);
+		userWantsToQuit = false;
 	}
 	
 	@Override
 	public void onExit() {
+		Gdx.graphics.setTitle("Save My Toys!");
 		world.dispose();
 	}
 	
@@ -43,8 +53,23 @@ public class InGameState implements GameState {
 	public InputProcessor getInputProcessor() {
 		return new InputAdapter() {
 			@Override
-			public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+			public boolean touchUp(int screenX, int screenY, int pointer, int button) {
 				controller.mouseUp();
+				return false;
+			}
+			
+			@Override
+			public boolean keyDown(int keycode) {
+				userWantsToQuit = keycode == Input.Keys.ESCAPE;
+				
+				if (userWantsToQuit) {
+					return true; // override the global behaviour!
+				}
+				
+				if (keycode == Input.Keys.N) {
+					controller.skipLevel();
+				}
+				
 				return false;
 			}
 		};
@@ -52,6 +77,8 @@ public class InGameState implements GameState {
 
 	@Override
 	public GameState update(float dt) {
+		if (userWantsToQuit) { return gameExitState; }
+		
 		world.update(dt, controller);
 		
 		return world.gameCompleted() ? gameCompletedState : this;
