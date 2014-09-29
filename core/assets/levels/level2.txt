@@ -1,4 +1,4 @@
-<level name="A step up">
+<level name="A Step Up">
 	<rescue>5</rescue>
 	<map>
 		# # # # # # # # # #

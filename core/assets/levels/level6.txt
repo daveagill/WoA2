@@ -1,4 +1,4 @@
-<level name="Avoid The Pit">
+<level name="Avoid the Pit">
 	<rescue>5</rescue>
 	<map>
 		. . . . . . . . . . . . . . . . .

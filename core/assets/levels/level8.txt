@@ -10,7 +10,7 @@
 		# # # # # # . . # # # # # # # # #
 	</map>
 	<spawnerConfigs>
-		<spawn amount="5" freq="0.5" />
+		<spawn amount="10" freq="0.5" />
 	</spawnerConfigs>
 	<inventory>
 		<blockers available="21" />

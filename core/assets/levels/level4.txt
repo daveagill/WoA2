@@ -1,4 +1,4 @@
-<level name="Hazards can be hazardous">
+<level name="Hazards can be Hazardous!">
 	<rescue>10</rescue>
 	<map>
 		X . . . . X X X X X X X X .

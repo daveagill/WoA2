@@ -1,7 +1,6 @@
 package week.of.awesome;
 
 import java.util.Collection;
-import java.util.HashMap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -28,6 +27,7 @@ public class MapRenderer {
 	private Texture groundTex_walkable_leftCorner;
 	private Texture groundTex_walkable_leftLedge;
 	private Texture groundTex_walkable_leftAndRightCorner;
+	private Texture groundTex_walkable_floating;
 	private Texture groundTex_nonWalkable;
 	
 	private Texture startTex;
@@ -64,6 +64,7 @@ public class MapRenderer {
 		this.groundTex_walkable_leftCorner = renderer.newTexture("maps/themed/grassy/ground_walkable_leftCorner.png");
 		this.groundTex_walkable_leftLedge = renderer.newTexture("maps/themed/grassy/ground_walkable_leftLedge.png");
 		this.groundTex_walkable_leftAndRightCorner = renderer.newTexture("maps/themed/grassy/ground_walkable_leftAndRightCorner.png");
+		this.groundTex_walkable_floating = renderer.newTexture("maps/themed/grassy/ground_walkable_floating.png");
 		this.groundTex_nonWalkable = renderer.newTexture("maps/themed/grassy/ground_nonWalkable.png");
 		
 		this.startTex = renderer.newTexture("maps/start.png");
@@ -191,7 +192,7 @@ public class MapRenderer {
 			}
 			
 			if (!top && !right && !left && !bottom) {
-				return groundTex_nonWalkable;
+				return groundTex_walkable_floating;
 			}
 			
 			if (!top && right && left) { 
