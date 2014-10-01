@@ -21,8 +21,8 @@ Use the MOUSE cursor to drop tiles in the world to control the flow of toys.
 
 Click the GHOSTLY KILL BUTTON to expunge any remaining toys. Don't worry, if you have rescued enough toys then you will still win the level :-)
 
-To quit gameplay and return to main menu - Press ESCAPE  
-To quit app from main menu - Press ESCAPE
+To quit gameplay and return to main menu - Press ESCAPE.  
+To quit app from main menu - Press ESCAPE.
 
 Stuck on a level? Between you and me, pressing the N key (for 'N'ext) will skip ahead. Hush, it's a secret!
 
@@ -56,13 +56,15 @@ Stuck on a level? Between you and me, pressing the N key (for 'N'ext) will skip 
   + LibGDX (http://libgdx.badlogicgames.com/)
 
 
-## THANKS
+## Thanks
 To my wonderful fiancé for the all support and for putting up with me being so occupied with work and game development!
 
 
-## LEGAL
+## Legal
 Music licensed under Creative Commons: By Attribution 3.0  
 Font "Montserrat" licensed under SIL Open Font License, see: /development-assets/fonts/OFL.txt
+Font "Babycakes" is available under the Public Domain.
+Map sprites by Kenny.nl are available under the Public Domain via CC0 (Creative Commmons 0: Public Domain).
 LibGDX licensed under Apache2.
 
 Except where otherwise noted, all content Copyright 2014 David Gill and open-sourced under MIT license, see: /LICENSE
