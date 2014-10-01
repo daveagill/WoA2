@@ -1,0 +1,8 @@
+launch4j-config.xml is the project configuration for launch4j that creates START.exe (an exe that wraps a runnable JAR).
+START.exe is looking for Game.jar
+
+Everything in /packaging is to go into/wrap-around the final product. It includes:
+
+* A cut down JRE8
+* START.exe
+* A readme
